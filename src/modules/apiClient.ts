@@ -43,7 +43,8 @@ export class APIClient {
       });
 
       ztoolkit.log("[API] Response status:", response.status);
-      ztoolkit.log("[API] Response headers:", JSON.stringify(Object.fromEntries(response.headers.entries())));
+      const contentType = response.headers.get("content-type") || "";
+      ztoolkit.log("[API] Content-Type:", contentType);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -51,10 +52,33 @@ export class APIClient {
         throw new Error(`API Error ${response.status}: ${errorText}`);
       }
 
-      return this.handleStream(response, onChunk);
+      // 根据 content-type 决定处理方式
+      if (contentType.includes("text/event-stream")) {
+        return this.handleStream(response, onChunk);
+      } else {
+        // 非流式响应，直接解析 JSON
+        return this.handleNonStream(response, onChunk);
+      }
     } catch (error) {
       ztoolkit.log("[API] Request failed:", error);
       throw new Error(`API call failed: ${error}`);
+    }
+  }
+
+  private async handleNonStream(response: Response, onChunk?: (chunk: string) => void): Promise<string> {
+    const text = await response.text();
+    ztoolkit.log("[API] Raw response:", text.substring(0, 500));
+
+    try {
+      const json = JSON.parse(text);
+      const content = json.choices?.[0]?.message?.content || json.content?.[0]?.text || "";
+      ztoolkit.log("[API] Parsed content:", content.substring(0, 100));
+      onChunk?.(content);
+      return content;
+    } catch (error) {
+      ztoolkit.log("[API] JSON parse error:", error);
+      // 如果不是 JSON，可能是 HTML 错误页面
+      throw new Error(`Invalid response format: ${text.substring(0, 200)}`);
     }
   }
 
