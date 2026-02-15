@@ -32,8 +32,26 @@ export class ChatPanel {
       },
       onRender: ({ body, item }) => {
         if (!body.querySelector("#marginalia-container")) {
-          const container = this.onInit();
+          const doc = body.ownerDocument!;
+          const container = doc.createElement("div");
+          container.id = "marginalia-container";
+          container.className = "marginalia-container";
+          container.innerHTML = `
+            <div class="marginalia-messages" id="marginalia-messages"></div>
+            <div class="marginalia-input-area">
+              <textarea
+                id="marginalia-input"
+                class="marginalia-input"
+                placeholder="Ask about this paper..."
+                rows="2"
+              ></textarea>
+              <button id="marginalia-send" class="marginalia-button">Send</button>
+              <button id="marginalia-options" class="marginalia-button" style="width: auto; padding: 8px 12px;">+</button>
+            </div>
+          `;
+          this.container = container;
           body.appendChild(container);
+          this.attachEventListeners();
         }
         this.onItemChange(item);
       },
