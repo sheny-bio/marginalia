@@ -36,6 +36,16 @@ async function onMainWindowLoad(win: _ZoteroTypes.MainWindow): Promise<void> {
     `${addon.data.config.addonRef}-mainWindow.ftl`,
   );
 
+  // 加载 CSS 样式
+  const doc = win.document;
+  if (!doc.getElementById("marginalia-chat-styles")) {
+    const link = doc.createElement("link");
+    link.id = "marginalia-chat-styles";
+    link.rel = "stylesheet";
+    link.href = `chrome://${addon.data.config.addonRef}/content/chatPanel.css`;
+    doc.documentElement?.appendChild(link);
+  }
+
   await chatPanel.register();
 }
 
