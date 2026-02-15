@@ -43,15 +43,21 @@ export class StorageManager {
     }
   }
 
-  async getMessages(itemID: number): Promise<Array<{ role: string; content: string }>> {
+  async getMessages(itemID: number): Promise<Array<{ role: string; content: string; toolCalls?: any }>> {
     const sql = `
-      SELECT role, content FROM marginalia_conversations
+      SELECT role, content, toolCalls FROM marginalia_conversations
       WHERE itemID = ?
       ORDER BY timestamp ASC
     `;
     try {
       const rows = (await Zotero.DB.queryAsync(sql, [itemID])) as any[];
-      return rows?.map((row: any) => ({ role: row.role, content: row.content })) || [];
+      return (
+        rows?.map((row: any) => ({
+          role: row.role,
+          content: row.content,
+          toolCalls: row.toolCalls ? JSON.parse(row.toolCalls) : undefined,
+        })) || []
+      );
     } catch (error) {
       ztoolkit.log("Error loading messages:", error);
       return [];

@@ -105,10 +105,74 @@
 
 .marginalia-tool-call {
   background: #F5F5F5;
-  border-left: 3px solid #007AFF;
+  border: 1px solid #E0E0E0;
+  border-radius: 6px;
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+.marginalia-tool-call-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 12px;
-  border-radius: 4px;
+  background: #EBEBEB;
+  cursor: pointer;
+  user-select: none;
+}
+
+.marginalia-tool-call-header:hover {
+  background: #E0E0E0;
+}
+
+.marginalia-tool-call-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s;
+}
+
+.marginalia-tool-call.collapsed .marginalia-tool-call-icon {
+  transform: rotate(-90deg);
+}
+
+.marginalia-tool-call-name {
+  font-weight: 500;
   font-size: 12px;
-  margin: 4px 0;
+  color: #333;
+}
+
+.marginalia-tool-call-status {
+  margin-left: auto;
+  font-size: 11px;
+  color: #666;
+}
+
+.marginalia-tool-call-body {
+  padding: 10px 12px;
+  font-size: 12px;
   font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+  border-top: 1px solid #E0E0E0;
+}
+
+.marginalia-tool-call.collapsed .marginalia-tool-call-body {
+  display: none;
+}
+
+.marginalia-tool-call-args {
+  color: #666;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #E0E0E0;
+}
+
+.marginalia-tool-call-result {
+  color: #333;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
