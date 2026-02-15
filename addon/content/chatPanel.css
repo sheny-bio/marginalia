@@ -52,11 +52,13 @@
   padding: 12px;
   border-top: 1px solid #e5e5ea;
   display: flex;
+  align-items: flex-end;
   gap: 8px;
 }
 
 .marginalia-input {
   flex: 1;
+  min-width: 0;
   padding: 8px 12px;
   border: 1px solid #d1d1d6;
   border-radius: 6px;
@@ -67,6 +69,7 @@
 }
 
 .marginalia-button {
+  flex-shrink: 0;
   padding: 8px 16px;
   background: #007aff;
   color: white;
@@ -75,6 +78,7 @@
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .marginalia-button:hover {
