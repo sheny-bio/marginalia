@@ -66,6 +66,15 @@
         label="Enable Tool Calling"
       />
     </hbox>
+    <hbox align="start">
+      <html:label for="marginalia-systemPrompt" style="width: 120px; margin-top: 8px;">System Prompt:</html:label>
+      <html:textarea
+        id="marginalia-systemPrompt"
+        preference="systemPrompt"
+        style="flex: 1; height: 100px; padding: 8px; border: 1px solid #D1D1D6; border-radius: 4px; font-family: monospace; font-size: 12px;"
+        placeholder="You are a helpful academic paper analysis assistant."
+      ></html:textarea>
+    </hbox>
   </html:fieldset>
 </groupbox>
 <vbox>

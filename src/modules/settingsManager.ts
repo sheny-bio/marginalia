@@ -35,9 +35,10 @@ export class SettingsManager {
   }
 
   async getSystemPrompt(): Promise<string> {
+    const value = await this.storage.getSetting("systemPrompt");
     return (
-      (await this.storage.getSetting("systemPrompt")) ||
-      "You are a helpful academic paper analysis assistant."
+      value ||
+      "You are a helpful academic paper analysis assistant. Provide clear, concise answers based on the paper content."
     );
   }
 
