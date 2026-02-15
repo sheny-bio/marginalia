@@ -1,5 +1,7 @@
 import { StorageManager } from "./storageManager";
 
+const PREF_PREFIX = "extensions.zotero.marginalia";
+
 export class SettingsManager {
   private storage: StorageManager;
 
@@ -7,10 +9,22 @@ export class SettingsManager {
     this.storage = storage;
   }
 
+  private getPref(key: string): string | null {
+    try {
+      return Zotero.Prefs.get(`${PREF_PREFIX}.${key}`, true) as string | null;
+    } catch {
+      return null;
+    }
+  }
+
+  private setPref(key: string, value: string) {
+    Zotero.Prefs.set(`${PREF_PREFIX}.${key}`, value, true);
+  }
+
   async getAPIConfig() {
-    const url = await this.storage.getSetting("apiUrl");
-    const apiKey = await this.storage.getSetting("apiKey");
-    const model = await this.storage.getSetting("model");
+    const url = this.getPref("apiUrl");
+    const apiKey = this.getPref("apiKey");
+    const model = this.getPref("model");
 
     return {
       url: url || "https://api.openai.com/v1",
@@ -20,22 +34,22 @@ export class SettingsManager {
   }
 
   async setAPIConfig(url: string, apiKey: string, model: string) {
-    await this.storage.saveSetting("apiUrl", url);
-    await this.storage.saveSetting("apiKey", apiKey);
-    await this.storage.saveSetting("model", model);
+    this.setPref("apiUrl", url);
+    this.setPref("apiKey", apiKey);
+    this.setPref("model", model);
   }
 
   async getMaxHistoryRounds(): Promise<number> {
-    const value = await this.storage.getSetting("maxHistoryRounds");
+    const value = this.getPref("maxHistoryRounds");
     return parseInt(value || "20", 10);
   }
 
   async setMaxHistoryRounds(rounds: number) {
-    await this.storage.saveSetting("maxHistoryRounds", rounds.toString());
+    this.setPref("maxHistoryRounds", rounds.toString());
   }
 
   async getSystemPrompt(): Promise<string> {
-    const value = await this.storage.getSetting("systemPrompt");
+    const value = this.getPref("systemPrompt");
     return (
       value ||
       "You are a helpful academic paper analysis assistant. Provide clear, concise answers based on the paper content."
@@ -43,15 +57,15 @@ export class SettingsManager {
   }
 
   async setSystemPrompt(prompt: string) {
-    await this.storage.saveSetting("systemPrompt", prompt);
+    this.setPref("systemPrompt", prompt);
   }
 
   async isToolCallingEnabled(): Promise<boolean> {
-    const value = await this.storage.getSetting("enableToolCalling");
+    const value = this.getPref("enableToolCalling");
     return value === "true";
   }
 
   async setToolCallingEnabled(enabled: boolean) {
-    await this.storage.saveSetting("enableToolCalling", enabled.toString());
+    this.setPref("enableToolCalling", enabled.toString());
   }
 }
