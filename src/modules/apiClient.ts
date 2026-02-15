@@ -36,7 +36,8 @@ export class APIClient {
       });
 
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`API Error ${response.status}: ${errorText}`);
       }
 
       return this.handleStream(response, onChunk);
