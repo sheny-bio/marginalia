@@ -6,7 +6,7 @@ export class StorageManager {
   }
 
   private async createTables() {
-    const sql = `
+    const conversationsTable = `
       CREATE TABLE IF NOT EXISTS marginalia_conversations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         itemID INTEGER NOT NULL,
@@ -15,16 +15,19 @@ export class StorageManager {
         timestamp INTEGER NOT NULL,
         toolCalls JSON,
         FOREIGN KEY (itemID) REFERENCES items(itemID)
-      );
+      )
+    `;
 
+    const settingsTable = `
       CREATE TABLE IF NOT EXISTS marginalia_settings (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
-      );
+      )
     `;
 
     try {
-      await Zotero.DB.queryAsync(sql);
+      await Zotero.DB.queryAsync(conversationsTable);
+      await Zotero.DB.queryAsync(settingsTable);
     } catch (error) {
       ztoolkit.log("Error creating tables:", error);
     }
