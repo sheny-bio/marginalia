@@ -37,11 +37,19 @@ export class ChatPanel {
         icon: `chrome://${addon.data.config.addonRef}/content/icons/favicon.png`,
       },
       onRender: ({ body, item }) => {
-        // 设置 body 的样式以确保正确显示
+        // 设置 body 及其父元素的样式以确保正确显示
         body.style.display = "flex";
         body.style.flexDirection = "column";
         body.style.height = "100%";
-        body.style.minHeight = "400px";
+        body.style.overflow = "hidden";
+
+        // 确保父容器也有正确的高度
+        const parent = body.parentElement as HTMLElement | null;
+        if (parent) {
+          parent.style.height = "100%";
+          parent.style.display = "flex";
+          parent.style.flexDirection = "column";
+        }
 
         if (!body.querySelector("#marginalia-container")) {
           const doc = body.ownerDocument!;
