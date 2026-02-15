@@ -19,7 +19,7 @@ export class ChatPanel {
   }
 
   async register() {
-    // @ts-ignore - ItemPaneManager is available in Zotero runtime
+    // @ts-expect-error - ItemPaneManager is available in Zotero runtime
     Zotero.ItemPaneManager.registerSection({
       paneID: "marginalia-chat",
       pluginID: addon.data.config.addonID,
@@ -38,7 +38,7 @@ export class ChatPanel {
   }
 
   private onInit() {
-    // @ts-ignore - document is available in browser context
+    // @ts-expect-error - document is available in browser context
     const container = document.createElement("div");
     container.id = "marginalia-container";
     container.className = "marginalia-container";
@@ -108,7 +108,7 @@ export class ChatPanel {
 
   private addMessage(role: string, content: string) {
     const messagesDiv = this.container?.querySelector("#marginalia-messages");
-    // @ts-ignore - document is available in browser context
+    // @ts-expect-error - document is available in browser context
     const messageEl = document.createElement("div");
     messageEl.className = `marginalia-message ${role}`;
 
@@ -130,7 +130,7 @@ export class ChatPanel {
 
   private showLoading() {
     const messagesDiv = this.container?.querySelector("#marginalia-messages");
-    // @ts-ignore - document is available in browser context
+    // @ts-expect-error - document is available in browser context
     const loadingEl = document.createElement("div");
     loadingEl.className = "marginalia-loading";
     loadingEl.id = "marginalia-loading";
@@ -229,7 +229,7 @@ export class ChatPanel {
   }
 
   private escapeHtml(text: string): string {
-    // @ts-ignore - document is available in browser context
+    // @ts-expect-error - document is available in browser context
     const div = document.createElement("div");
     div.textContent = text;
     return div.innerHTML;
