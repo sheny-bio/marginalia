@@ -33,11 +33,11 @@ export class ChatPanel {
       pluginID: addon.data.config.addonID,
       header: {
         l10nID: "marginalia-chat-header",
-        icon: `chrome://${addon.data.config.addonRef}/content/icons/favicon.png`,
+        icon: `chrome://${addon.data.config.addonRef}/content/icons/favicon.svg`,
       },
       sidenav: {
         l10nID: "marginalia-chat-sidenav",
-        icon: `chrome://${addon.data.config.addonRef}/content/icons/favicon.png`,
+        icon: `chrome://${addon.data.config.addonRef}/content/icons/favicon.svg`,
       },
       onRender: ({ body, item }) => {
         // 设置 body 样式 - 占满可用空间
