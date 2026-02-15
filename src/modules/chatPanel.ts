@@ -105,7 +105,17 @@ export class ChatPanel {
     const messageEl = document.createElement("div");
     messageEl.className = `marginalia-message ${role}`;
 
-    const renderedContent = role === "assistant" ? MarkdownRenderer.render(content) : this.escapeHtml(content);
+    let renderedContent = content;
+    if (role === "assistant") {
+      renderedContent = MarkdownRenderer.render(content);
+    } else if (role === "system") {
+      // 系统消息显示为工具调用结果
+      messageEl.className = "marginalia-tool-call";
+      renderedContent = this.escapeHtml(content);
+    } else {
+      renderedContent = this.escapeHtml(content);
+    }
+
     messageEl.innerHTML = `<div class="marginalia-message-content">${renderedContent}</div>`;
     messagesDiv?.appendChild(messageEl);
     (messagesDiv as any)?.scrollTo(0, (messagesDiv as any).scrollHeight);

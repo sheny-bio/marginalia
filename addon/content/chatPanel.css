@@ -103,8 +103,12 @@
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.marginalia-tool-call {
+  background: #F5F5F5;
+  border-left: 3px solid #007AFF;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin: 4px 0;
+  font-family: monospace;
 }
