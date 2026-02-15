@@ -3,9 +3,11 @@ import { registerPrefsScripts } from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
 import { ChatPanel } from "./modules/chatPanel";
 import { StorageManager } from "./modules/storageManager";
+import { SettingsManager } from "./modules/settingsManager";
 
-const chatPanel = new ChatPanel();
 const storageManager = new StorageManager();
+const settingsManager = new SettingsManager(storageManager);
+const chatPanel = new ChatPanel(storageManager, settingsManager);
 
 async function onStartup() {
   await Promise.all([

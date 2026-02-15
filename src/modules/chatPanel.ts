@@ -1,6 +1,20 @@
+import { APIClient, Message } from "./apiClient";
+import { StorageManager } from "./storageManager";
+import { SettingsManager } from "./settingsManager";
+import { ZoteroAPI } from "./zoteroAPI";
+
 export class ChatPanel {
   private container: HTMLElement | null = null;
   private currentItemID: number | null = null;
+  private apiClient: APIClient | null = null;
+  private storageManager: StorageManager;
+  private settingsManager: SettingsManager;
+  private messages: Message[] = [];
+
+  constructor(storageManager: StorageManager, settingsManager: SettingsManager) {
+    this.storageManager = storageManager;
+    this.settingsManager = settingsManager;
+  }
 
   async register() {
     // @ts-ignore - ItemPane is available in Zotero runtime
@@ -73,10 +87,12 @@ export class ChatPanel {
 
     try {
       const response = await this.callAPI(message);
+      this.removeLoading();
       this.addMessage("assistant", response);
       await this.saveMessage("user", message);
       await this.saveMessage("assistant", response);
     } catch (error) {
+      this.removeLoading();
       this.addMessage("assistant", `Error: ${error}`);
     }
   }
@@ -106,17 +122,67 @@ export class ChatPanel {
     loading?.remove();
   }
 
-  private async callAPI(message: string): Promise<string> {
-    // Placeholder - will be implemented in Phase 1.5
-    return "This is a placeholder response.";
+  private async callAPI(userMessage: string): Promise<string> {
+    if (!this.apiClient) {
+      const config = await this.settingsManager.getAPIConfig();
+      this.apiClient = new APIClient(config);
+    }
+
+    const paperInfo = ZoteroAPI.getPaperInfo(this.currentItemID!);
+    const systemPrompt = await this.settingsManager.getSystemPrompt();
+
+    const messages: Message[] = [
+      {
+        role: "system",
+        content: `${systemPrompt}\n\nCurrent paper: ${paperInfo?.title || "Unknown"}`,
+      },
+      ...this.messages,
+      { role: "user", content: userMessage },
+    ];
+
+    let fullResponse = "";
+    await this.apiClient.chat(messages, (chunk) => {
+      fullResponse += chunk;
+      this.updateLastMessage(fullResponse);
+    });
+
+    return fullResponse;
+  }
+
+  private updateLastMessage(content: string) {
+    const messagesDiv = this.container?.querySelector("#marginalia-messages");
+    const messages = messagesDiv?.querySelectorAll(".marginalia-message");
+    if (messages && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      const contentDiv = lastMessage.querySelector(".marginalia-message-content");
+      if (contentDiv) {
+        contentDiv.textContent = content;
+      }
+    }
   }
 
   private async loadMessages() {
-    // Placeholder for loading messages from storage
+    if (!this.currentItemID) return;
+
+    const loadedMessages = await this.storageManager.getMessages(this.currentItemID);
+    this.messages = loadedMessages.map(msg => ({
+      role: msg.role as "user" | "assistant" | "system",
+      content: msg.content,
+    }));
+    const messagesDiv = this.container?.querySelector("#marginalia-messages");
+    if (messagesDiv) {
+      messagesDiv.innerHTML = "";
+      for (const msg of this.messages) {
+        this.addMessage(msg.role, msg.content);
+      }
+    }
   }
 
   private async saveMessage(role: string, content: string) {
-    // Placeholder for saving messages to storage
+    if (!this.currentItemID) return;
+
+    await this.storageManager.saveMessage(this.currentItemID, role, content);
+    this.messages.push({ role: role as "user" | "assistant" | "system", content });
   }
 
   private escapeHtml(text: string): string {
