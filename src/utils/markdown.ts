@@ -5,12 +5,18 @@ export class MarkdownRenderer {
     marked.setOptions({
       breaks: true,
       gfm: true,
+      xhtml: true, // 使用 XHTML 兼容的自闭合标签
     });
   }
 
   static render(content: string): string {
     try {
-      return marked(content) as string;
+      let html = marked(content) as string;
+      // 确保所有自闭合标签符合 XHTML 规范
+      html = html.replace(/<hr>/g, "<hr />");
+      html = html.replace(/<br>/g, "<br />");
+      html = html.replace(/<img([^>]*)>/g, "<img$1 />");
+      return html;
     } catch (error) {
       ztoolkit.log("Markdown rendering error:", error);
       return content;
