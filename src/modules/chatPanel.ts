@@ -3,6 +3,7 @@ import { StorageManager } from "./storageManager";
 import { SettingsManager } from "./settingsManager";
 import { ZoteroAPI } from "./zoteroAPI";
 import { MarkdownRenderer } from "../utils/markdown";
+import { ToolCaller, AVAILABLE_TOOLS } from "./toolCaller";
 
 export class ChatPanel {
   private container: HTMLElement | null = null;
@@ -133,11 +134,20 @@ export class ChatPanel {
 
     const paperInfo = ZoteroAPI.getPaperInfo(this.currentItemID!);
     const systemPrompt = await this.settingsManager.getSystemPrompt();
+    const enableToolCalling = await this.settingsManager.isToolCallingEnabled();
+
+    let systemMessage = `${systemPrompt}\n\nCurrent paper: ${paperInfo?.title || "Unknown"}`;
+
+    if (enableToolCalling) {
+      systemMessage += `\n\nYou have access to the following tools:\n${AVAILABLE_TOOLS.map(
+        (t) => `- ${t.name}: ${t.description}`
+      ).join("\n")}`;
+    }
 
     const messages: Message[] = [
       {
         role: "system",
-        content: `${systemPrompt}\n\nCurrent paper: ${paperInfo?.title || "Unknown"}`,
+        content: systemMessage,
       },
       ...this.messages,
       { role: "user", content: userMessage },
@@ -148,6 +158,19 @@ export class ChatPanel {
       fullResponse += chunk;
       this.updateLastMessage(fullResponse);
     });
+
+    // 处理工具调用
+    if (enableToolCalling) {
+      const toolCalls = ToolCaller.parseToolCalls(fullResponse);
+      for (const toolCall of toolCalls) {
+        try {
+          const result = await ToolCaller.executeTool(toolCall);
+          this.addMessage("system", `Tool result for ${toolCall.name}:\n${result}`);
+        } catch (error) {
+          this.addMessage("system", `Tool error: ${error}`);
+        }
+      }
+    }
 
     return fullResponse;
   }
