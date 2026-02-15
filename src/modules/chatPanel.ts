@@ -19,12 +19,15 @@ export class ChatPanel {
   }
 
   async register() {
-    // @ts-expect-error - ItemPaneManager is available in Zotero runtime
     Zotero.ItemPaneManager.registerSection({
       paneID: "marginalia-chat",
       pluginID: addon.data.config.addonID,
       header: {
         l10nID: "marginalia-chat-header",
+        icon: `chrome://${addon.data.config.addonRef}/content/icons/favicon.png`,
+      },
+      sidenav: {
+        l10nID: "marginalia-chat-sidenav",
         icon: `chrome://${addon.data.config.addonRef}/content/icons/favicon.png`,
       },
       onRender: ({ body, item }) => {

@@ -10,6 +10,7 @@ export type FluentMessageId =
   | 'item-section-example2-head-text'
   | 'item-section-example2-sidenav-tooltip'
   | 'marginalia-chat-header'
+  | 'marginalia-chat-sidenav'
   | 'menuitem-filemenulabel'
   | 'menuitem-label'
   | 'menuitem-submenulabel'
