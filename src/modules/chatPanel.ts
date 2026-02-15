@@ -40,25 +40,28 @@ export class ChatPanel {
         icon: `chrome://${addon.data.config.addonRef}/content/icons/favicon.png`,
       },
       onRender: ({ body, item }) => {
-        // 设置 body 样式 - 让 Zotero 管理高度，不使用 !important
+        // 设置 body 样式 - 占满可用空间
         body.style.cssText = `
           display: flex;
           flex-direction: column;
           overflow: hidden;
+          height: 100%;
+          min-height: 400px;
         `;
 
         if (!body.querySelector("#marginalia-container")) {
           const doc = body.ownerDocument!;
 
-          // 创建容器 - 使用 min/max-height 而非固定高度
+          // 创建容器 - 占满父容器高度
           const container = doc.createElement("div");
           container.id = "marginalia-container";
           container.className = "marginalia-container";
           container.style.cssText = `
             display: flex;
             flex-direction: column;
-            min-height: 300px;
-            max-height: 600px;
+            flex: 1;
+            height: 100%;
+            min-height: 700px;
             overflow: hidden;
           `;
 
@@ -66,7 +69,7 @@ export class ChatPanel {
           const messagesDiv = doc.createElement("div");
           messagesDiv.id = "marginalia-messages";
           messagesDiv.className = "marginalia-messages";
-          messagesDiv.style.cssText = "flex: 1; overflow-y: auto; min-height: 100px; padding: 12px;";
+          messagesDiv.style.cssText = "flex: 1; overflow-y: auto; min-height: 200px; padding: 12px;";
 
           // 创建输入区域
           const inputArea = doc.createElement("div");
@@ -178,53 +181,12 @@ export class ChatPanel {
     });
   }
 
-  private onInit() {
-    // @ts-expect-error - document is available in browser context
-    const container = document.createElement("div");
-    container.id = "marginalia-container";
-    container.className = "marginalia-container";
-    container.innerHTML = `
-      <div class="marginalia-messages" id="marginalia-messages"></div>
-      <div class="marginalia-input-area">
-        <textarea
-          id="marginalia-input"
-          class="marginalia-input"
-          placeholder="Ask about this paper..."
-          rows="2"
-        ></textarea>
-        <button id="marginalia-send" class="marginalia-button">Send</button>
-        <button id="marginalia-options" class="marginalia-button" style="width: auto; padding: 8px 12px;">+</button>
-      </div>
-    `;
-    this.container = container;
-    this.attachEventListeners();
-    return container;
-  }
-
   private onItemChange(item: any) {
     if (item) {
       this.currentItemID = item.id;
       this.currentItem = item;
       this.loadMessages();
     }
-  }
-
-  private onDestroy() {
-    this.container = null;
-    this.currentItemID = null;
-  }
-
-  private attachEventListeners() {
-    const sendBtn = this.container?.querySelector("#marginalia-send");
-    const input = this.container?.querySelector("#marginalia-input") as HTMLTextAreaElement;
-
-    sendBtn?.addEventListener("click", () => this.sendMessage());
-    input?.addEventListener("keydown", (e: KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        this.sendMessage();
-      }
-    });
   }
 
   private async sendMessage() {
@@ -797,9 +759,7 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
 
   private async copyToClipboard(text: string) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const clipboardService = (Components.classes as any)["@mozilla.org/widget/clipboardhelper;1"]?.getService(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (Components.interfaces as any).nsIClipboardHelper
       );
       if (clipboardService) {
