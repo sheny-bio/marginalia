@@ -4,6 +4,7 @@ import { createZToolkit } from "./utils/ztoolkit";
 import { ChatPanel } from "./modules/chatPanel";
 import { StorageManager } from "./modules/storageManager";
 import { SettingsManager } from "./modules/settingsManager";
+import { BasicExampleFactory } from "./modules/examples";
 
 const storageManager = new StorageManager();
 const settingsManager = new SettingsManager(storageManager);
@@ -18,6 +19,8 @@ async function onStartup() {
 
   initLocale();
   await storageManager.init();
+
+  BasicExampleFactory.registerPrefs();
 
   await Promise.all(
     Zotero.getMainWindows().map((win) => onMainWindowLoad(win)),
