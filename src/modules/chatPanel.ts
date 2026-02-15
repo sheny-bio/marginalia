@@ -19,6 +19,8 @@ export class ChatPanel {
   private storageManager: StorageManager;
   private settingsManager: SettingsManager;
   private messages: StoredMessage[] = [];
+  private dropdownVisible: boolean = false;
+  private currentItem: any = null;
 
   constructor(storageManager: StorageManager, settingsManager: SettingsManager) {
     this.storageManager = storageManager;
@@ -89,12 +91,22 @@ export class ChatPanel {
           sendBtn.textContent = "Send";
           sendBtn.style.cssText = "padding: 10px 16px; background: #171717; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;";
 
+          // 创建选项按钮包装器（用于下拉菜单定位）
+          const optionsWrapper = doc.createElement("div");
+          optionsWrapper.className = "marginalia-options-wrapper";
+          optionsWrapper.style.cssText = "position: relative;";
+
           // 创建选项按钮
           const optionsBtn = doc.createElement("button");
           optionsBtn.id = "marginalia-options";
           optionsBtn.className = "marginalia-button marginalia-button-options";
           optionsBtn.textContent = "+";
           optionsBtn.style.cssText = "padding: 10px 12px; background: #f5f5f5; color: #171717; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 14px;";
+
+          // 创建下拉菜单
+          const dropdown = this.createDropdownMenu(doc);
+          optionsWrapper.appendChild(optionsBtn);
+          optionsWrapper.appendChild(dropdown);
 
           // 直接绑定事件监听器
           sendBtn.addEventListener("click", () => {
@@ -109,10 +121,21 @@ export class ChatPanel {
             }
           });
 
+          // 选项按钮点击事件
+          optionsBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.toggleDropdown();
+          });
+
+          // 点击其他地方关闭下拉菜单
+          doc.addEventListener("click", () => {
+            this.hideDropdown();
+          });
+
           // 组装 DOM
           inputArea.appendChild(textarea);
           inputArea.appendChild(sendBtn);
-          inputArea.appendChild(optionsBtn);
+          inputArea.appendChild(optionsWrapper);
           container.appendChild(messagesDiv);
           container.appendChild(inputArea);
 
@@ -150,6 +173,7 @@ export class ChatPanel {
   private onItemChange(item: any) {
     if (item) {
       this.currentItemID = item.id;
+      this.currentItem = item;
       this.loadMessages();
     }
   }
@@ -258,6 +282,8 @@ export class ChatPanel {
       }
 
       messageEl.appendChild(contentDiv);
+      // 添加复制按钮
+      this.addCopyButtonToMessage(messageEl, content, role);
     }
 
     messagesDiv.appendChild(messageEl);
@@ -382,6 +408,28 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
       content,
       toolCalls,
     });
+
+    // 检查并执行对话轮数限制
+    await this.enforceHistoryLimit();
+  }
+
+  private async enforceHistoryLimit() {
+    if (!this.currentItemID) return;
+
+    const maxRounds = await this.settingsManager.getMaxHistoryRounds();
+    if (maxRounds <= 0) return; // 0 表示不限制
+
+    // 计算当前轮数（一轮 = 一个用户消息 + 一个助手回复）
+    const userMessages = this.messages.filter((m) => m.role === "user");
+    const currentRounds = userMessages.length;
+
+    if (currentRounds > maxRounds) {
+      const roundsToRemove = currentRounds - maxRounds;
+      // 删除最早的几轮对话
+      await this.storageManager.deleteOldestMessages(this.currentItemID, roundsToRemove * 2);
+      // 重新加载消息
+      await this.loadMessages();
+    }
   }
 
   private escapeHtml(text: string): string {
@@ -392,5 +440,362 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  // ========== Phase 4: 对话管理功能 ==========
+
+  private createDropdownMenu(doc: Document): HTMLElement {
+    const dropdown = doc.createElement("div");
+    dropdown.id = "marginalia-dropdown";
+    dropdown.className = "marginalia-dropdown";
+    dropdown.style.cssText = `
+      position: absolute;
+      bottom: 100%;
+      right: 0;
+      margin-bottom: 8px;
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      min-width: 180px;
+      overflow: hidden;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(8px);
+      transition: opacity 0.2s, visibility 0.2s, transform 0.2s;
+    `;
+
+    const menuItems = [
+      { id: "export-md", icon: "📄", label: "Export as Markdown", action: () => this.exportAsMarkdown() },
+      { id: "copy-all", icon: "📋", label: "Copy All Messages", action: () => this.copyAllMessages() },
+      { id: "divider", type: "divider" },
+      { id: "clear-history", icon: "🗑️", label: "Clear History", danger: true, action: () => this.showClearConfirmDialog() },
+    ];
+
+    for (const item of menuItems) {
+      if (item.type === "divider") {
+        const divider = doc.createElement("div");
+        divider.className = "marginalia-dropdown-divider";
+        divider.style.cssText = "height: 1px; background: #e5e5e5; margin: 4px 0;";
+        dropdown.appendChild(divider);
+      } else {
+        const menuItem = doc.createElement("button");
+        menuItem.className = `marginalia-dropdown-item${item.danger ? " danger" : ""}`;
+        menuItem.style.cssText = `
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 16px;
+          font-size: 14px;
+          color: ${item.danger ? "#DC2626" : "#171717"};
+          cursor: pointer;
+          border: none;
+          background: none;
+          width: 100%;
+          text-align: left;
+          font-family: inherit;
+        `;
+        menuItem.innerHTML = `<span>${item.icon}</span><span>${item.label}</span>`;
+        menuItem.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.hideDropdown();
+          item.action?.();
+        });
+        menuItem.addEventListener("mouseenter", () => {
+          menuItem.style.background = item.danger ? "#FEF2F2" : "#F5F5F5";
+        });
+        menuItem.addEventListener("mouseleave", () => {
+          menuItem.style.background = "none";
+        });
+        dropdown.appendChild(menuItem);
+      }
+    }
+
+    return dropdown;
+  }
+
+  private toggleDropdown() {
+    const dropdown = this.container?.querySelector("#marginalia-dropdown") as HTMLElement;
+    if (!dropdown) return;
+
+    this.dropdownVisible = !this.dropdownVisible;
+    if (this.dropdownVisible) {
+      dropdown.style.opacity = "1";
+      dropdown.style.visibility = "visible";
+      dropdown.style.transform = "translateY(0)";
+    } else {
+      dropdown.style.opacity = "0";
+      dropdown.style.visibility = "hidden";
+      dropdown.style.transform = "translateY(8px)";
+    }
+  }
+
+  private hideDropdown() {
+    const dropdown = this.container?.querySelector("#marginalia-dropdown") as HTMLElement;
+    if (!dropdown) return;
+
+    this.dropdownVisible = false;
+    dropdown.style.opacity = "0";
+    dropdown.style.visibility = "hidden";
+    dropdown.style.transform = "translateY(8px)";
+  }
+
+  private async copyAllMessages() {
+    const markdown = this.generateMarkdownContent();
+    await this.copyToClipboard(markdown);
+    this.showToast("All messages copied!");
+  }
+
+  private async exportAsMarkdown() {
+    const markdown = this.generateMarkdownContent();
+    const title = this.currentItem?.getField?.("title") || "conversation";
+    const safeTitle = title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "_").substring(0, 50);
+    const filename = `${safeTitle}_chat_${new Date().toISOString().split("T")[0]}.md`;
+
+    try {
+      // 使用 Zotero 的文件保存对话框
+      const path = await new ztoolkit.FilePicker(
+        "Save Markdown",
+        "save",
+        [["Markdown Files (*.md)", "*.md"]],
+        filename
+      ).open();
+
+      if (path) {
+        await Zotero.File.putContentsAsync(path, markdown);
+        this.showToast("Exported successfully!");
+      }
+    } catch (error) {
+      ztoolkit.log("Error exporting markdown:", error);
+      this.showToast("Export failed!");
+    }
+  }
+
+  private generateMarkdownContent(): string {
+    const title = this.currentItem?.getField?.("title") || "Untitled";
+    const date = new Date().toLocaleString();
+    let markdown = `# Chat History: ${title}\n\n`;
+    markdown += `*Exported on ${date}*\n\n---\n\n`;
+
+    for (const msg of this.messages) {
+      if (msg.role === "user") {
+        markdown += `## 👤 User\n\n${msg.content}\n\n`;
+      } else if (msg.role === "assistant") {
+        markdown += `## 🤖 Assistant\n\n${msg.content}\n\n`;
+        if (msg.toolCalls && msg.toolCalls.length > 0) {
+          for (const tc of msg.toolCalls) {
+            markdown += `<details>\n<summary>🔧 Tool: ${tc.name}</summary>\n\n`;
+            markdown += `**Arguments:**\n\`\`\`json\n${JSON.stringify(tc.arguments, null, 2)}\n\`\`\`\n\n`;
+            markdown += `**Result:**\n\`\`\`\n${tc.result || "No result"}\n\`\`\`\n</details>\n\n`;
+          }
+        }
+      }
+      markdown += "---\n\n";
+    }
+
+    return markdown;
+  }
+
+  private showClearConfirmDialog() {
+    const doc = this.container?.ownerDocument;
+    if (!doc) return;
+
+    const overlay = doc.createElement("div");
+    overlay.className = "marginalia-dialog-overlay";
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    `;
+
+    const dialog = doc.createElement("div");
+    dialog.className = "marginalia-dialog";
+    dialog.style.cssText = `
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 320px;
+      width: 90%;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    `;
+
+    dialog.innerHTML = `
+      <div style="font-size: 16px; font-weight: 600; color: #171717; margin-bottom: 8px;">Clear Chat History?</div>
+      <div style="font-size: 14px; color: #6B7280; margin-bottom: 20px; line-height: 1.5;">
+        This will permanently delete all messages for this paper. This action cannot be undone.
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button id="marginalia-cancel-btn" style="padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #F5F5F5; color: #171717; border: none; font-family: inherit;">Cancel</button>
+        <button id="marginalia-confirm-btn" style="padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #DC2626; color: #fff; border: none; font-family: inherit;">Clear</button>
+      </div>
+    `;
+
+    overlay.appendChild(dialog);
+    doc.body?.appendChild(overlay);
+
+    const cancelBtn = dialog.querySelector("#marginalia-cancel-btn");
+    const confirmBtn = dialog.querySelector("#marginalia-confirm-btn");
+
+    cancelBtn?.addEventListener("click", () => {
+      overlay.remove();
+    });
+
+    confirmBtn?.addEventListener("click", async () => {
+      await this.clearHistory();
+      overlay.remove();
+    });
+
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+      }
+    });
+  }
+
+  private async clearHistory() {
+    if (!this.currentItemID) return;
+
+    await this.storageManager.clearMessages(this.currentItemID);
+    this.messages = [];
+
+    const messagesDiv = this.container?.querySelector("#marginalia-messages");
+    if (messagesDiv) {
+      messagesDiv.innerHTML = "";
+    }
+
+    this.showToast("History cleared!");
+  }
+
+  private async copyToClipboard(text: string) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clipboardService = (Components.classes as any)["@mozilla.org/widget/clipboardhelper;1"]?.getService(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (Components.interfaces as any).nsIClipboardHelper
+      );
+      if (clipboardService) {
+        clipboardService.copyString(text);
+      }
+    } catch (error) {
+      ztoolkit.log("Error copying to clipboard:", error);
+    }
+  }
+
+  private showToast(message: string) {
+    const doc = this.container?.ownerDocument;
+    if (!doc) return;
+
+    // 移除已存在的 toast
+    const existingToast = doc.querySelector(".marginalia-toast");
+    if (existingToast) {
+      existingToast.remove();
+    }
+
+    const toast = doc.createElement("div");
+    toast.className = "marginalia-toast";
+    toast.textContent = message;
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #171717;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 3000;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+    `;
+
+    doc.body?.appendChild(toast);
+
+    // 触发动画
+    const win = doc.defaultView;
+    if (win) {
+      win.requestAnimationFrame(() => {
+        toast.style.opacity = "1";
+        toast.style.transform = "translateX(-50%) translateY(0)";
+      });
+    } else {
+      // Fallback
+      setTimeout(() => {
+        toast.style.opacity = "1";
+        toast.style.transform = "translateX(-50%) translateY(0)";
+      }, 10);
+    }
+
+    // 3秒后移除
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      toast.style.transform = "translateX(-50%) translateY(20px)";
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  // 复制单条消息（添加到消息元素上）
+  private addCopyButtonToMessage(messageEl: HTMLElement, content: string, _role: string) {
+    const doc = messageEl.ownerDocument;
+    if (!doc) return;
+
+    const wrapper = doc.createElement("div");
+    wrapper.className = "marginalia-message-wrapper";
+    wrapper.style.cssText = "position: relative;";
+
+    const copyBtn = doc.createElement("button");
+    copyBtn.className = "marginalia-copy-btn";
+    copyBtn.textContent = "Copy";
+    copyBtn.style.cssText = `
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 4px 8px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #6B7280;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+    `;
+
+    wrapper.addEventListener("mouseenter", () => {
+      copyBtn.style.opacity = "1";
+    });
+    wrapper.addEventListener("mouseleave", () => {
+      copyBtn.style.opacity = "0";
+    });
+
+    copyBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await this.copyToClipboard(content);
+      copyBtn.textContent = "Copied!";
+      copyBtn.style.background = "#D4AF37";
+      copyBtn.style.color = "#fff";
+      copyBtn.style.borderColor = "#D4AF37";
+      setTimeout(() => {
+        copyBtn.textContent = "Copy";
+        copyBtn.style.background = "rgba(255,255,255,0.9)";
+        copyBtn.style.color = "#6B7280";
+        copyBtn.style.borderColor = "#e5e5e5";
+      }, 2000);
+    });
+
+    // 将原有内容移到 wrapper 中
+    while (messageEl.firstChild) {
+      wrapper.appendChild(messageEl.firstChild);
+    }
+    wrapper.appendChild(copyBtn);
+    messageEl.appendChild(wrapper);
   }
 }

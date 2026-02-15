@@ -30,9 +30,6 @@
     "update-deps": "npm update --save"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.44",
-    "@ai-sdk/openai": "^3.0.29",
-    "ai": "^6.0.86",
     "marked": "^17.0.2",
     "zotero-plugin-toolkit": "^5.1.0-beta.13"
   },

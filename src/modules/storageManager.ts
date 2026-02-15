@@ -76,6 +76,24 @@ export class StorageManager {
     }
   }
 
+  async deleteOldestMessages(itemID: number, count: number) {
+    // 删除最早的 count 条消息
+    const sql = `
+      DELETE FROM marginalia_conversations
+      WHERE id IN (
+        SELECT id FROM marginalia_conversations
+        WHERE itemID = ?
+        ORDER BY timestamp ASC
+        LIMIT ?
+      )
+    `;
+    try {
+      await Zotero.DB.queryAsync(sql, [itemID, count]);
+    } catch (error) {
+      ztoolkit.log("Error deleting oldest messages:", error);
+    }
+  }
+
   async saveSetting(key: string, value: string) {
     const sql = `
       INSERT OR REPLACE INTO marginalia_settings (key, value)

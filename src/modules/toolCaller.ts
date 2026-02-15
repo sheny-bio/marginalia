@@ -9,6 +9,7 @@ export interface Tool {
 export interface ToolCall {
   name: string;
   arguments: Record<string, any>;
+  result?: string;
 }
 
 export const AVAILABLE_TOOLS: Tool[] = [
