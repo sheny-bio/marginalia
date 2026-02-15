@@ -169,10 +169,16 @@ export class ChatPanel {
   }
 
   private async sendMessage() {
+    ztoolkit.log("sendMessage called, container:", this.container);
     const input = this.container?.querySelector("#marginalia-input") as HTMLTextAreaElement;
+    ztoolkit.log("input element:", input);
     const message = input?.value.trim();
+    ztoolkit.log("message:", message, "currentItemID:", this.currentItemID);
 
-    if (!message || !this.currentItemID) return;
+    if (!message || !this.currentItemID) {
+      ztoolkit.log("Early return - message empty or no item selected");
+      return;
+    }
 
     input.value = "";
     this.addMessage("user", message);
