@@ -30,14 +30,14 @@ export class StorageManager {
     }
   }
 
-  async saveMessage(itemID: number, role: string, content: string) {
+  async saveMessage(itemID: number, role: string, content: string, toolCalls?: any) {
     const timestamp = Math.floor(Date.now() / 1000);
     const sql = `
-      INSERT INTO marginalia_conversations (itemID, role, content, timestamp)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO marginalia_conversations (itemID, role, content, timestamp, toolCalls)
+      VALUES (?, ?, ?, ?, ?)
     `;
     try {
-      await Zotero.DB.queryAsync(sql, [itemID, role, content, timestamp]);
+      await Zotero.DB.queryAsync(sql, [itemID, role, content, timestamp, toolCalls ? JSON.stringify(toolCalls) : null]);
     } catch (error) {
       ztoolkit.log("Error saving message:", error);
     }
