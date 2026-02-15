@@ -204,53 +204,70 @@ export class ChatPanel {
 
   private addMessage(role: string, content: string, toolCall?: ToolCall, toolResult?: string) {
     const messagesDiv = this.container?.querySelector("#marginalia-messages");
-    // @ts-expect-error - document is available in browser context
-    const messageEl = document.createElement("div");
+    if (!messagesDiv || !this.container) return;
+
+    const doc = this.container.ownerDocument;
+    if (!doc) return;
+    const messageEl = doc.createElement("div");
 
     if (toolCall && toolResult !== undefined) {
       // 工具调用显示为可折叠卡片
       messageEl.className = "marginalia-tool-call";
-      messageEl.innerHTML = `
-        <div class="marginalia-tool-call-header">
-          <svg class="marginalia-tool-call-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-          <span class="marginalia-tool-call-name">${this.escapeHtml(toolCall.name)}</span>
-          <span class="marginalia-tool-call-status">completed</span>
-        </div>
-        <div class="marginalia-tool-call-body">
-          <div class="marginalia-tool-call-args">Arguments: ${this.escapeHtml(JSON.stringify(toolCall.arguments))}</div>
-          <div class="marginalia-tool-call-result">${this.escapeHtml(toolResult)}</div>
-        </div>
+      messageEl.style.cssText = "background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; margin: 8px 0; overflow: hidden;";
+
+      const header = doc.createElement("div");
+      header.className = "marginalia-tool-call-header";
+      header.style.cssText = "display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #ebebeb; cursor: pointer;";
+      header.innerHTML = `
+        <span style="font-weight: 500; font-size: 12px;">${this.escapeHtml(toolCall.name)}</span>
+        <span style="margin-left: auto; font-size: 11px; color: #D4AF37;">completed</span>
       `;
-      // 添加折叠功能
-      const header = messageEl.querySelector(".marginalia-tool-call-header");
-      header?.addEventListener("click", () => {
-        messageEl.classList.toggle("collapsed");
+
+      const body = doc.createElement("div");
+      body.className = "marginalia-tool-call-body";
+      body.style.cssText = "padding: 10px 12px; font-size: 12px; font-family: monospace; border-top: 1px solid #e0e0e0; white-space: pre-wrap; word-break: break-word;";
+      body.innerHTML = `
+        <div style="color: #666; margin-bottom: 8px;">Arguments: ${this.escapeHtml(JSON.stringify(toolCall.arguments))}</div>
+        <div style="color: #333;">${this.escapeHtml(toolResult)}</div>
+      `;
+
+      header.addEventListener("click", () => {
+        body.style.display = body.style.display === "none" ? "block" : "none";
       });
+
+      messageEl.appendChild(header);
+      messageEl.appendChild(body);
     } else {
       messageEl.className = `marginalia-message ${role}`;
-      let renderedContent = content;
-      if (role === "assistant") {
-        renderedContent = MarkdownRenderer.render(content);
+      messageEl.style.cssText = `display: flex; ${role === "user" ? "justify-content: flex-end;" : "justify-content: flex-start;"}`;
+
+      const contentDiv = doc.createElement("div");
+      contentDiv.className = "marginalia-message-content";
+
+      if (role === "user") {
+        contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #171717; color: #fff; line-height: 1.5;";
+        contentDiv.textContent = content;
       } else {
-        renderedContent = this.escapeHtml(content);
+        contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5;";
+        contentDiv.innerHTML = MarkdownRenderer.render(content);
       }
-      messageEl.innerHTML = `<div class="marginalia-message-content">${renderedContent}</div>`;
+
+      messageEl.appendChild(contentDiv);
     }
 
-    messagesDiv?.appendChild(messageEl);
-    (messagesDiv as any)?.scrollTo(0, (messagesDiv as any).scrollHeight);
+    messagesDiv.appendChild(messageEl);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
   }
 
   private showLoading() {
     const messagesDiv = this.container?.querySelector("#marginalia-messages");
-    // @ts-expect-error - document is available in browser context
-    const loadingEl = document.createElement("div");
+    const doc = this.container?.ownerDocument;
+    if (!doc || !messagesDiv) return;
+    const loadingEl = doc.createElement("div");
     loadingEl.className = "marginalia-loading";
     loadingEl.id = "marginalia-loading";
     loadingEl.innerHTML = `<div class="marginalia-spinner"></div><span>Thinking...</span>`;
-    messagesDiv?.appendChild(loadingEl);
+    messagesDiv.appendChild(loadingEl);
   }
 
   private removeLoading() {
@@ -363,9 +380,12 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
   }
 
   private escapeHtml(text: string): string {
-    // @ts-expect-error - document is available in browser context
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
+    // 手动转义 HTML 特殊字符
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 }
