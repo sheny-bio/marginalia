@@ -175,13 +175,15 @@ export class ChatPanel {
   private async sendMessage() {
     ztoolkit.log("sendMessage called");
     const input = this.inputElement;
+    ztoolkit.log("input element:", input);
+    ztoolkit.log("input.value raw:", input?.value);
     if (!input) {
       ztoolkit.log("No input element");
       return;
     }
 
     const message = input.value?.trim();
-    ztoolkit.log("message:", message, "currentItemID:", this.currentItemID);
+    ztoolkit.log("message:", message || "<empty string>", "currentItemID:", this.currentItemID);
 
     if (!message || !this.currentItemID) {
       ztoolkit.log("Early return - message empty or no item selected");
