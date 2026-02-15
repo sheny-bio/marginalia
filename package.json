@@ -4,11 +4,11 @@
   "version": "3.1.0",
   "description": "Zotero Plugin Template",
   "config": {
-    "addonName": "Zotero Plugin Template",
-    "addonID": "addontemplate@euclpts.com",
-    "addonRef": "addontemplate",
-    "addonInstance": "AddonTemplate",
-    "prefsPrefix": "extensions.zotero.addontemplate"
+    "addonName": "Marginalia AI Chat",
+    "addonID": "marginalia@anthropic.com",
+    "addonRef": "marginalia",
+    "addonInstance": "Marginalia",
+    "prefsPrefix": "extensions.zotero.marginalia"
   },
   "repository": {
     "type": "git",
