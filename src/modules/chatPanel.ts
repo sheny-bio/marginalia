@@ -80,7 +80,7 @@ export class ChatPanel {
           textarea.rows = 1;
           textarea.style.cssText = "flex: 1; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; resize: none; font-size: 14px; font-family: inherit;";
 
-          // 创建发送按钮 - 使用 createElement 而不是 innerHTML
+          // 创建发送按钮
           const sendBtn = doc.createElement("button");
           sendBtn.id = "marginalia-send";
           sendBtn.className = "marginalia-button";
@@ -94,6 +94,18 @@ export class ChatPanel {
           optionsBtn.textContent = "+";
           optionsBtn.style.cssText = "padding: 10px 12px; background: #f5f5f5; color: #171717; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 14px;";
 
+          // 直接绑定事件监听器
+          sendBtn.addEventListener("click", () => {
+            ztoolkit.log("Send button clicked");
+            this.sendMessage();
+          });
+
+          textarea.addEventListener("keydown", (e: KeyboardEvent) => {
+            if (e.key === "Enter" && e.ctrlKey) {
+              this.sendMessage();
+            }
+          });
+
           // 组装 DOM
           inputArea.appendChild(textarea);
           inputArea.appendChild(sendBtn);
@@ -103,7 +115,6 @@ export class ChatPanel {
 
           this.container = container;
           body.appendChild(container);
-          this.attachEventListeners();
         }
         this.onItemChange(item);
       },
