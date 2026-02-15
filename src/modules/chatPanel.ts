@@ -107,6 +107,7 @@ export class ChatPanel {
   }
 
   private async callAPI(message: string): Promise<string> {
+    // Placeholder - will be implemented in Phase 1.5
     return "This is a placeholder response.";
   }
 
