@@ -37,40 +37,39 @@ export class ChatPanel {
         icon: `chrome://${addon.data.config.addonRef}/content/icons/favicon.png`,
       },
       onRender: ({ body, item }) => {
-        // 设置 body 及其父元素的样式以确保正确显示
-        body.style.display = "flex";
-        body.style.flexDirection = "column";
-        body.style.height = "100%";
-        body.style.overflow = "hidden";
-        body.style.boxSizing = "border-box";
-
-        // 确保父容器也有正确的高度
-        let parent = body.parentElement as HTMLElement | null;
-        while (parent) {
-          parent.style.height = "100%";
-          parent.style.overflow = "hidden";
-          parent.style.boxSizing = "border-box";
-          parent = parent.parentElement as HTMLElement | null;
-          // 只向上遍历 3 层
-          if (parent && parent.tagName === "HTML") break;
-        }
+        // 直接设置 body 的固定高度
+        body.style.cssText = `
+          display: flex !important;
+          flex-direction: column !important;
+          height: 500px !important;
+          min-height: 300px !important;
+          max-height: 100% !important;
+          overflow: hidden !important;
+        `;
 
         if (!body.querySelector("#marginalia-container")) {
           const doc = body.ownerDocument!;
           const container = doc.createElement("div");
           container.id = "marginalia-container";
           container.className = "marginalia-container";
+          container.style.cssText = `
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100% !important;
+            overflow: hidden !important;
+          `;
           container.innerHTML = `
-            <div class="marginalia-messages" id="marginalia-messages"></div>
-            <div class="marginalia-input-area">
+            <div class="marginalia-messages" id="marginalia-messages" style="flex: 1; overflow-y: auto; min-height: 100px;"></div>
+            <div class="marginalia-input-area" style="flex-shrink: 0; padding: 12px; background: #fff; border-top: 1px solid #e5e5e5; display: flex; gap: 8px;">
               <textarea
                 id="marginalia-input"
                 class="marginalia-input"
                 placeholder="Ask about this paper..."
                 rows="1"
+                style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; resize: none;"
               ></textarea>
-              <button id="marginalia-send" class="marginalia-button">Send</button>
-              <button id="marginalia-options" class="marginalia-button marginalia-button-options">+</button>
+              <button id="marginalia-send" class="marginalia-button" style="padding: 10px 16px; background: #171717; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Send</button>
+              <button id="marginalia-options" class="marginalia-button marginalia-button-options" style="padding: 10px 12px; background: #f5f5f5; color: #171717; border: 1px solid #ddd; border-radius: 8px; cursor: pointer;">+</button>
             </div>
           `;
           this.container = container;
