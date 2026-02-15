@@ -1,5 +1,5 @@
 <linkset>
-  <html:link rel="localization" href="__addonRef__-preferences.ftl" />
+  <html:link rel="localization" href="marginalia-preferences.ftl" />
 </linkset>
 <groupbox
   onload="Zotero.__addonInstance__.hooks.onPrefsEvent('load', { window })"
@@ -14,7 +14,7 @@
       <html:input
         type="text"
         id="marginalia-apiUrl"
-        preference="apiUrl"
+        preference="extensions.zotero.marginalia.apiUrl"
         flex="1"
         placeholder="https://api.openai.com/v1"
       />
@@ -24,7 +24,7 @@
       <html:input
         type="password"
         id="marginalia-apiKey"
-        preference="apiKey"
+        preference="extensions.zotero.marginalia.apiKey"
         flex="1"
       />
     </hbox>
@@ -33,7 +33,7 @@
       <html:input
         type="text"
         id="marginalia-model"
-        preference="model"
+        preference="extensions.zotero.marginalia.model"
         flex="1"
         placeholder="gpt-4o-mini"
       />
@@ -52,7 +52,7 @@
       <html:input
         type="number"
         id="marginalia-maxHistoryRounds"
-        preference="maxHistoryRounds"
+        preference="extensions.zotero.marginalia.maxHistoryRounds"
         min="1"
         max="100"
         value="20"
@@ -62,7 +62,7 @@
     <hbox align="center">
       <checkbox
         id="marginalia-enableToolCalling"
-        preference="enableToolCalling"
+        preference="extensions.zotero.marginalia.enableToolCalling"
         label="Enable Tool Calling"
       />
     </hbox>
@@ -70,7 +70,7 @@
       <html:label for="marginalia-systemPrompt" style="width: 120px; margin-top: 8px;">System Prompt:</html:label>
       <html:textarea
         id="marginalia-systemPrompt"
-        preference="systemPrompt"
+        preference="extensions.zotero.marginalia.systemPrompt"
         style="flex: 1; height: 100px; padding: 8px; border: 1px solid #D1D1D6; border-radius: 4px; font-family: monospace; font-size: 12px;"
         placeholder="You are a helpful academic paper analysis assistant."
       ></html:textarea>
