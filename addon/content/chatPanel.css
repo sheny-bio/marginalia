@@ -2,18 +2,21 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 300px;
   background: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 13px;
+  overflow: hidden;
 }
 
 .marginalia-messages {
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-height: 0;
 }
 
 .marginalia-message {
@@ -49,11 +52,13 @@
 }
 
 .marginalia-input-area {
+  flex: 0 0 auto;
   padding: 12px;
   border-top: 1px solid #e5e5ea;
   display: flex;
   align-items: flex-end;
   gap: 8px;
+  background: #ffffff;
 }
 
 .marginalia-input {
