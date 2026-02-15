@@ -103,7 +103,8 @@ export class ChatPanel {
           });
 
           textarea.addEventListener("keydown", (e: KeyboardEvent) => {
-            if (e.key === "Enter" && e.ctrlKey) {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
               this.sendMessage();
             }
           });
@@ -164,7 +165,8 @@ export class ChatPanel {
 
     sendBtn?.addEventListener("click", () => this.sendMessage());
     input?.addEventListener("keydown", (e: KeyboardEvent) => {
-      if (e.key === "Enter" && e.ctrlKey) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
         this.sendMessage();
       }
     });
@@ -245,10 +247,10 @@ export class ChatPanel {
       contentDiv.className = "marginalia-message-content";
 
       if (role === "user") {
-        contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #171717; color: #fff; line-height: 1.5;";
+        contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #171717; color: #fff; line-height: 1.5; user-select: text; cursor: text;";
         contentDiv.textContent = content;
       } else {
-        contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5;";
+        contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; user-select: text; cursor: text;";
         contentDiv.innerHTML = MarkdownRenderer.render(content);
       }
 
