@@ -399,7 +399,30 @@ export class ChatPanel {
     const systemPrompt = await this.settingsManager.getSystemPrompt();
     const enableToolCalling = await this.settingsManager.isToolCallingEnabled();
 
-    let systemMessage = `${systemPrompt}\n\nCurrent paper: ${paperInfo?.title || "Unknown"}\nCurrent paper ID: ${this.currentItemID}`;
+    // 获取论文全文内容
+    let paperContent = "";
+    try {
+      paperContent = await ZoteroAPI.getPaperContent(this.currentItemID!);
+      // 限制全文长度，避免超出 token 限制
+      if (paperContent.length > 50000) {
+        paperContent = paperContent.substring(0, 50000) + "\n\n[Content truncated due to length...]";
+      }
+    } catch (error) {
+      ztoolkit.log("Error getting paper content:", error);
+      paperContent = "Unable to retrieve paper content.";
+    }
+
+    let systemMessage = `${systemPrompt}
+
+Current paper information:
+- Title: ${paperInfo?.title || "Unknown"}
+- Authors: ${paperInfo?.authors?.map((a: any) => `${a.firstName} ${a.lastName}`).join(", ") || "Unknown"}
+- Year: ${paperInfo?.year || "Unknown"}
+- Abstract: ${paperInfo?.abstract || "No abstract available"}
+- Paper ID: ${this.currentItemID}
+
+Paper full text content:
+${paperContent}`;
 
     if (enableToolCalling) {
       systemMessage += `\n\nYou have access to the following tools. To use a tool, wrap your call in XML tags like this:
@@ -758,16 +781,73 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
   }
 
   private async copyToClipboard(text: string) {
+    ztoolkit.log("[Copy] Starting copy, text length:", text.length);
+    ztoolkit.log("[Copy] Text preview:", text.substring(0, 100));
+
+    // 方法1: Zotero.Utilities.Internal.copyTextToClipboard
     try {
+      ztoolkit.log("[Copy] Trying Zotero.Utilities.Internal.copyTextToClipboard");
+      ztoolkit.log("[Copy] Zotero.Utilities:", typeof Zotero.Utilities);
+      ztoolkit.log("[Copy] Zotero.Utilities.Internal:", typeof (Zotero.Utilities as any).Internal);
+      ztoolkit.log("[Copy] copyTextToClipboard:", typeof (Zotero.Utilities as any).Internal?.copyTextToClipboard);
+
+      if ((Zotero.Utilities as any).Internal?.copyTextToClipboard) {
+        (Zotero.Utilities as any).Internal.copyTextToClipboard(text);
+        ztoolkit.log("[Copy] Zotero.Utilities.Internal.copyTextToClipboard succeeded");
+        this.showToast("Copied!");
+        return;
+      } else {
+        ztoolkit.log("[Copy] copyTextToClipboard not available");
+      }
+    } catch (error) {
+      ztoolkit.log("[Copy] Zotero.Utilities.Internal.copyTextToClipboard failed:", error);
+    }
+
+    // 方法2: nsIClipboardHelper
+    try {
+      ztoolkit.log("[Copy] Trying nsIClipboardHelper");
       const clipboardService = (Components.classes as any)["@mozilla.org/widget/clipboardhelper;1"]?.getService(
         (Components.interfaces as any).nsIClipboardHelper
       );
+      ztoolkit.log("[Copy] clipboardService:", clipboardService);
+
       if (clipboardService) {
         clipboardService.copyString(text);
+        ztoolkit.log("[Copy] nsIClipboardHelper succeeded");
+        this.showToast("Copied!");
+        return;
+      } else {
+        ztoolkit.log("[Copy] nsIClipboardHelper not available");
       }
     } catch (error) {
-      ztoolkit.log("Error copying to clipboard:", error);
+      ztoolkit.log("[Copy] nsIClipboardHelper failed:", error);
     }
+
+    // 方法3: document.execCommand (旧方法但可能有效)
+    try {
+      ztoolkit.log("[Copy] Trying document.execCommand");
+      const doc = this.container?.ownerDocument;
+      if (doc && doc.body) {
+        const textarea = doc.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        doc.body.appendChild(textarea);
+        textarea.select();
+        const result = doc.execCommand("copy");
+        doc.body.removeChild(textarea);
+        ztoolkit.log("[Copy] execCommand result:", result);
+        if (result) {
+          this.showToast("Copied!");
+          return;
+        }
+      }
+    } catch (error) {
+      ztoolkit.log("[Copy] execCommand failed:", error);
+    }
+
+    ztoolkit.log("[Copy] All methods failed");
+    this.showToast("Copy failed");
   }
 
   private showToast(message: string) {
@@ -824,7 +904,7 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
   }
 
   // 复制单条消息（添加到消息元素上）
-  private addCopyButtonToMessage(messageEl: HTMLElement, content: string, _role: string) {
+  private addCopyButtonToMessage(messageEl: HTMLElement, _content: string, _role: string) {
     const doc = messageEl.ownerDocument;
     if (!doc) return;
 
@@ -859,7 +939,11 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
 
     copyBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      await this.copyToClipboard(content);
+      // 动态获取当前消息内容，而不是使用绑定时的内容
+      const contentDiv = messageEl.querySelector(".marginalia-message-content");
+      const currentContent = contentDiv?.textContent || "";
+      ztoolkit.log("[Copy] Getting content from DOM, length:", currentContent.length);
+      await this.copyToClipboard(currentContent);
       copyBtn.textContent = "Copied!";
       copyBtn.style.background = "#D4AF37";
       copyBtn.style.color = "#fff";
