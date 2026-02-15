@@ -2,6 +2,7 @@ import { APIClient, Message } from "./apiClient";
 import { StorageManager } from "./storageManager";
 import { SettingsManager } from "./settingsManager";
 import { ZoteroAPI } from "./zoteroAPI";
+import { MarkdownRenderer } from "../utils/markdown";
 
 export class ChatPanel {
   private container: HTMLElement | null = null;
@@ -102,7 +103,9 @@ export class ChatPanel {
     // @ts-ignore - document is available in browser context
     const messageEl = document.createElement("div");
     messageEl.className = `marginalia-message ${role}`;
-    messageEl.innerHTML = `<div class="marginalia-message-content">${this.escapeHtml(content)}</div>`;
+
+    const renderedContent = role === "assistant" ? MarkdownRenderer.render(content) : this.escapeHtml(content);
+    messageEl.innerHTML = `<div class="marginalia-message-content">${renderedContent}</div>`;
     messagesDiv?.appendChild(messageEl);
     (messagesDiv as any)?.scrollTo(0, (messagesDiv as any).scrollHeight);
   }
