@@ -19,14 +19,21 @@ export class ChatPanel {
   }
 
   async register() {
-    // @ts-ignore - ItemPane is available in Zotero runtime
-    ztoolkit.ItemPane.registerSection({
-      paneType: "item",
-      tabLabel: "AI Chat",
-      sectionID: "marginalia-chat",
-      onInit: () => this.onInit(),
-      onItemChange: (item: any) => this.onItemChange(item),
-      onDestroy: () => this.onDestroy(),
+    // @ts-ignore - ItemPaneManager is available in Zotero runtime
+    Zotero.ItemPaneManager.registerSection({
+      paneID: "marginalia-chat",
+      pluginID: addon.data.config.addonID,
+      header: {
+        l10nID: "marginalia-chat-header",
+        icon: `chrome://${addon.data.config.addonRef}/content/icons/favicon.png`,
+      },
+      onRender: ({ body, item }) => {
+        if (!body.querySelector("#marginalia-container")) {
+          const container = this.onInit();
+          body.appendChild(container);
+        }
+        this.onItemChange(item);
+      },
     });
   }
 

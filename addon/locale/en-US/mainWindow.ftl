@@ -1,3 +1,5 @@
+marginalia-chat-header =
+    .label = AI Chat
 item-section-example1-head-text =
     .label = Plugin Template: Item Info
 item-section-example1-sidenav-tooltip =

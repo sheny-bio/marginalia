@@ -9,6 +9,7 @@ export type FluentMessageId =
   | 'item-section-example2-button-tooltip'
   | 'item-section-example2-head-text'
   | 'item-section-example2-sidenav-tooltip'
+  | 'marginalia-chat-header'
   | 'menuitem-filemenulabel'
   | 'menuitem-label'
   | 'menuitem-submenulabel'

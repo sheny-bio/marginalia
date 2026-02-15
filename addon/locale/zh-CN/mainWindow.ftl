@@ -1,3 +1,5 @@
+marginalia-chat-header =
+    .label = AI 聊天
 item-section-example1-head-text =
     .label = 插件模板: 条目信息
 item-section-example1-sidenav-tooltip =
