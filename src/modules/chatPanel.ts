@@ -37,7 +37,7 @@ export class ChatPanel {
         icon: `chrome://${addon.data.config.addonRef}/content/icons/favicon.png`,
       },
       onRender: ({ body, item }) => {
-        // 直接设置 body 的固定高度
+        // 设置 body 样式
         body.style.cssText = `
           display: flex !important;
           flex-direction: column !important;
@@ -49,6 +49,8 @@ export class ChatPanel {
 
         if (!body.querySelector("#marginalia-container")) {
           const doc = body.ownerDocument!;
+
+          // 创建容器
           const container = doc.createElement("div");
           container.id = "marginalia-container";
           container.className = "marginalia-container";
@@ -58,20 +60,47 @@ export class ChatPanel {
             height: 100% !important;
             overflow: hidden !important;
           `;
-          container.innerHTML = `
-            <div class="marginalia-messages" id="marginalia-messages" style="flex: 1; overflow-y: auto; min-height: 100px;"></div>
-            <div class="marginalia-input-area" style="flex-shrink: 0; padding: 12px; background: #fff; border-top: 1px solid #e5e5e5; display: flex; gap: 8px;">
-              <textarea
-                id="marginalia-input"
-                class="marginalia-input"
-                placeholder="Ask about this paper..."
-                rows="1"
-                style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; resize: none;"
-              ></textarea>
-              <button id="marginalia-send" class="marginalia-button" style="padding: 10px 16px; background: #171717; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Send</button>
-              <button id="marginalia-options" class="marginalia-button marginalia-button-options" style="padding: 10px 12px; background: #f5f5f5; color: #171717; border: 1px solid #ddd; border-radius: 8px; cursor: pointer;">+</button>
-            </div>
-          `;
+
+          // 创建消息区域
+          const messagesDiv = doc.createElement("div");
+          messagesDiv.id = "marginalia-messages";
+          messagesDiv.className = "marginalia-messages";
+          messagesDiv.style.cssText = "flex: 1; overflow-y: auto; min-height: 100px; padding: 12px;";
+
+          // 创建输入区域
+          const inputArea = doc.createElement("div");
+          inputArea.className = "marginalia-input-area";
+          inputArea.style.cssText = "flex-shrink: 0; padding: 12px; background: #fff; border-top: 1px solid #e5e5e5; display: flex; gap: 8px; align-items: flex-end;";
+
+          // 创建输入框
+          const textarea = doc.createElement("textarea") as HTMLTextAreaElement;
+          textarea.id = "marginalia-input";
+          textarea.className = "marginalia-input";
+          textarea.placeholder = "Ask about this paper...";
+          textarea.rows = 1;
+          textarea.style.cssText = "flex: 1; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; resize: none; font-size: 14px; font-family: inherit;";
+
+          // 创建发送按钮 - 使用 createElement 而不是 innerHTML
+          const sendBtn = doc.createElement("button");
+          sendBtn.id = "marginalia-send";
+          sendBtn.className = "marginalia-button";
+          sendBtn.textContent = "Send";
+          sendBtn.style.cssText = "padding: 10px 16px; background: #171717; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;";
+
+          // 创建选项按钮
+          const optionsBtn = doc.createElement("button");
+          optionsBtn.id = "marginalia-options";
+          optionsBtn.className = "marginalia-button marginalia-button-options";
+          optionsBtn.textContent = "+";
+          optionsBtn.style.cssText = "padding: 10px 12px; background: #f5f5f5; color: #171717; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 14px;";
+
+          // 组装 DOM
+          inputArea.appendChild(textarea);
+          inputArea.appendChild(sendBtn);
+          inputArea.appendChild(optionsBtn);
+          container.appendChild(messagesDiv);
+          container.appendChild(inputArea);
+
           this.container = container;
           body.appendChild(container);
           this.attachEventListeners();
