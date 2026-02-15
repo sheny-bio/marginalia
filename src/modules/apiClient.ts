@@ -1,7 +1,12 @@
+import { generateText, streamText, LanguageModel } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
+import { createAnthropic } from "@ai-sdk/anthropic";
+
 export interface APIConfig {
   url: string;
   apiKey: string;
   model: string;
+  provider?: "openai" | "anthropic" | "openai-compatible";
   temperature?: number;
   maxTokens?: number;
 }
@@ -13,51 +18,91 @@ export interface Message {
 
 export class APIClient {
   private config: APIConfig;
+  private model: LanguageModel;
 
   constructor(config: APIConfig) {
     this.config = config;
+    this.model = this.createModel();
+  }
+
+  private detectProvider(): "openai" | "anthropic" | "openai-compatible" {
+    if (this.config.provider) return this.config.provider;
+
+    const url = this.config.url.toLowerCase();
+    if (url.includes("anthropic.com")) return "anthropic";
+    if (url.includes("openai.com")) return "openai";
+    return "openai-compatible";
+  }
+
+  private createModel(): LanguageModel {
+    const provider = this.detectProvider();
+    ztoolkit.log("[API] Detected provider:", provider);
+
+    switch (provider) {
+      case "anthropic": {
+        const anthropic = createAnthropic({
+          apiKey: this.config.apiKey,
+          baseURL: this.config.url || undefined,
+        });
+        return anthropic(this.config.model);
+      }
+      case "openai": {
+        const openai = createOpenAI({
+          apiKey: this.config.apiKey,
+          baseURL: this.config.url || undefined,
+        });
+        return openai(this.config.model);
+      }
+      default: {
+        // OpenAI-compatible API (most third-party services)
+        const openaiCompatible = createOpenAI({
+          apiKey: this.config.apiKey,
+          baseURL: this.config.url,
+        });
+        return openaiCompatible(this.config.model);
+      }
+    }
   }
 
   async chat(messages: Message[], onChunk?: (chunk: string) => void): Promise<string> {
-    const requestUrl = `${this.config.url}/chat/completions`;
-    const requestBody = {
-      model: this.config.model,
-      messages,
-      temperature: this.config.temperature ?? 0.7,
-      max_tokens: this.config.maxTokens ?? 2000,
-      stream: true,
-    };
-
-    ztoolkit.log("[API] Request URL:", requestUrl);
-    ztoolkit.log("[API] Model:", this.config.model);
-    ztoolkit.log("[API] API Key (first 10 chars):", this.config.apiKey?.substring(0, 10) + "...");
+    ztoolkit.log("[API] Request with model:", this.config.model);
+    ztoolkit.log("[API] Messages count:", messages.length);
 
     try {
-      const response = await fetch(requestUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.config.apiKey}`,
-        },
-        body: JSON.stringify(requestBody),
-      });
+      if (onChunk) {
+        // 流式输出
+        const result = await streamText({
+          model: this.model,
+          messages: messages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          temperature: this.config.temperature ?? 0.7,
+          maxOutputTokens: this.config.maxTokens ?? 2000,
+        });
 
-      ztoolkit.log("[API] Response status:", response.status);
-      const contentType = response.headers.get("content-type") || "";
-      ztoolkit.log("[API] Content-Type:", contentType);
+        let fullText = "";
+        for await (const chunk of result.textStream) {
+          fullText += chunk;
+          onChunk(chunk);
+        }
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        ztoolkit.log("[API] Error response body:", errorText);
-        throw new Error(`API Error ${response.status}: ${errorText}`);
-      }
-
-      // 根据 content-type 决定处理方式
-      if (contentType.includes("text/event-stream")) {
-        return this.handleStream(response, onChunk);
+        ztoolkit.log("[API] Stream completed, total length:", fullText.length);
+        return fullText;
       } else {
-        // 非流式响应，直接解析 JSON
-        return this.handleNonStream(response, onChunk);
+        // 非流式输出
+        const result = await generateText({
+          model: this.model,
+          messages: messages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          temperature: this.config.temperature ?? 0.7,
+          maxOutputTokens: this.config.maxTokens ?? 2000,
+        });
+
+        ztoolkit.log("[API] Response length:", result.text.length);
+        return result.text;
       }
     } catch (error) {
       ztoolkit.log("[API] Request failed:", error);
@@ -65,72 +110,17 @@ export class APIClient {
     }
   }
 
-  private async handleNonStream(response: Response, onChunk?: (chunk: string) => void): Promise<string> {
-    const text = await response.text();
-    ztoolkit.log("[API] Raw response:", text.substring(0, 500));
-
-    try {
-      const json = JSON.parse(text);
-      const content = json.choices?.[0]?.message?.content || json.content?.[0]?.text || "";
-      ztoolkit.log("[API] Parsed content:", content.substring(0, 100));
-      onChunk?.(content);
-      return content;
-    } catch (error) {
-      ztoolkit.log("[API] JSON parse error:", error);
-      // 如果不是 JSON，可能是 HTML 错误页面
-      throw new Error(`Invalid response format: ${text.substring(0, 200)}`);
-    }
-  }
-
-  private async handleStream(response: Response, onChunk?: (chunk: string) => void): Promise<string> {
-    // @ts-ignore - ReadableStreamDefaultReader is available in browser context
-    const reader = response.body?.getReader();
-    if (!reader) throw new Error("No response body");
-
-    let fullText = "";
-    const decoder = new TextDecoder();
-
-    while (true) {
-      // @ts-ignore - reader.read() is available in browser context
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value);
-      const lines = chunk.split("\n");
-
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          const data = line.slice(6);
-          if (data === "[DONE]") continue;
-
-          try {
-            const json = JSON.parse(data);
-            const content = json.choices?.[0]?.delta?.content || "";
-            if (content) {
-              fullText += content;
-              onChunk?.(content);
-            }
-          } catch {
-            // Ignore parse errors
-          }
-        }
-      }
-    }
-
-    return fullText;
-  }
-
   async testConnection(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.config.url}/models`, {
-        headers: {
-          Authorization: `Bearer ${this.config.apiKey}`,
-        },
+      const result = await generateText({
+        model: this.model,
+        messages: [{ role: "user", content: "Hi" }],
+        maxOutputTokens: 10,
       });
-      return response.ok;
-    } catch {
+      return !!result.text;
+    } catch (error) {
+      ztoolkit.log("[API] Test connection failed:", error);
       return false;
     }
   }
 }
-
