@@ -13,6 +13,7 @@ interface StoredMessage {
 
 export class ChatPanel {
   private container: HTMLElement | null = null;
+  private inputElement: HTMLTextAreaElement | null = null;
   private currentItemID: number | null = null;
   private apiClient: APIClient | null = null;
   private storageManager: StorageManager;
@@ -79,6 +80,7 @@ export class ChatPanel {
           textarea.placeholder = "Ask about this paper...";
           textarea.rows = 1;
           textarea.style.cssText = "flex: 1; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; resize: none; font-size: 14px; font-family: inherit;";
+          this.inputElement = textarea;
 
           // 创建发送按钮
           const sendBtn = doc.createElement("button");
@@ -169,10 +171,14 @@ export class ChatPanel {
   }
 
   private async sendMessage() {
-    ztoolkit.log("sendMessage called, container:", this.container);
-    const input = this.container?.querySelector("#marginalia-input") as HTMLTextAreaElement;
-    ztoolkit.log("input element:", input);
-    const message = input?.value.trim();
+    ztoolkit.log("sendMessage called");
+    const input = this.inputElement;
+    if (!input) {
+      ztoolkit.log("No input element");
+      return;
+    }
+
+    const message = input.value?.trim();
     ztoolkit.log("message:", message, "currentItemID:", this.currentItemID);
 
     if (!message || !this.currentItemID) {
