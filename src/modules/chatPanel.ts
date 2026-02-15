@@ -192,17 +192,18 @@ export class ChatPanel {
 
     input.value = "";
     this.addMessage("user", message);
+    this.addMessage("assistant", ""); // 创建空的 assistant 消息用于流式更新
     this.showLoading();
 
     try {
       const { response, toolCalls } = await this.callAPI(message);
       this.removeLoading();
-      this.addMessage("assistant", response);
+      // 流式更新已经完成，不需要再 addMessage
       await this.saveMessage("user", message);
       await this.saveMessage("assistant", response, toolCalls.length > 0 ? toolCalls : undefined);
     } catch (error) {
       this.removeLoading();
-      this.addMessage("assistant", `Error: ${error}`);
+      this.updateLastMessage(`Error: ${error}`);
     }
   }
 
@@ -338,12 +339,12 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
 
   private updateLastMessage(content: string) {
     const messagesDiv = this.container?.querySelector("#marginalia-messages");
-    const messages = messagesDiv?.querySelectorAll(".marginalia-message");
+    const messages = messagesDiv?.querySelectorAll(".marginalia-message.assistant");
     if (messages && messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
       const contentDiv = lastMessage.querySelector(".marginalia-message-content");
       if (contentDiv) {
-        contentDiv.textContent = content;
+        contentDiv.innerHTML = MarkdownRenderer.render(content);
       }
     }
   }
