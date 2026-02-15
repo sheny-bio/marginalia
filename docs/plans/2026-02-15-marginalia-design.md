@@ -317,10 +317,426 @@ const tools = [
 
 ---
 
-## 11. 后续优化方向
+## 11. 文件结构设计
 
-- 支持更多 LLM 提供商
+### 11.1 项目文件组织
+
+```
+src/
+├── index.ts                          # 插件入口
+├── addon.ts                          # Addon 类定义
+├── hooks.ts                          # 生命周期钩子
+├── modules/
+│   ├── chatPanel.ts                  # 侧边栏主组件
+│   ├── apiClient.ts                  # OpenAI API 客户端
+│   ├── toolCaller.ts                 # 工具调用执行器
+│   ├── storageManager.ts             # 数据库操作
+│   ├── settingsManager.ts            # 设置管理
+│   └── zoteroAPI.ts                  # Zotero API 封装
+├── utils/
+│   ├── markdown.ts                   # Markdown 渲染
+│   ├── crypto.ts                     # API Key 加密
+│   ├── logger.ts                     # 日志工具
+│   └── constants.ts                  # 常量定义
+└── types/
+    └── index.ts                      # TypeScript 类型定义
+
+addon/
+├── content/
+│   ├── chatPanel.html                # 侧边栏 HTML
+│   ├── chatPanel.css                 # 侧边栏样式
+│   ├── preferences.xhtml             # 设置页面
+│   └── icons/
+└── locale/
+    ├── en-US/
+    │   ├── addon.ftl
+    │   ├── mainWindow.ftl
+    │   └── preferences.ftl
+    └── zh-CN/
+        ├── addon.ftl
+        ├── mainWindow.ftl
+        └── preferences.ftl
+```
+
+---
+
+## 12. API 客户端实现方案
+
+### 12.1 OpenAI 兼容 API 调用
+
+```typescript
+// src/modules/apiClient.ts
+interface APIConfig {
+  url: string;
+  apiKey: string;
+  model: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+interface Message {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+class APIClient {
+  private config: APIConfig;
+
+  async chat(messages: Message[], onChunk?: (chunk: string) => void): Promise<string> {
+    const response = await fetch(`${this.config.url}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.config.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: this.config.model,
+        messages,
+        temperature: this.config.temperature ?? 0.7,
+        max_tokens: this.config.maxTokens ?? 2000,
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    return this.handleStream(response, onChunk);
+  }
+
+  private async handleStream(response: Response, onChunk?: (chunk: string) => void): Promise<string> {
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error('No response body');
+
+    let fullText = '';
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+
+          try {
+            const json = JSON.parse(data);
+            const content = json.choices?.[0]?.delta?.content || '';
+            if (content) {
+              fullText += content;
+              onChunk?.(content);
+            }
+          } catch (e) {
+            // 忽略解析错误
+          }
+        }
+      }
+    }
+
+    return fullText;
+  }
+
+  async testConnection(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.config.url}/models`, {
+        headers: {
+          'Authorization': `Bearer ${this.config.apiKey}`,
+        },
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+}
+```
+
+---
+
+## 13. Zotero API 调用方式
+
+### 13.1 获取论文内容
+
+```typescript
+// src/modules/zoteroAPI.ts
+class ZoteroAPI {
+  // 获取论文基本信息
+  static getPaperInfo(itemID: number) {
+    const item = Zotero.Items.get(itemID);
+    return {
+      title: item.getField('title'),
+      authors: item.getCreators(),
+      abstract: item.getField('abstractNote'),
+      year: item.getField('date'),
+      tags: item.getTags(),
+    };
+  }
+
+  // 获取论文全文内容
+  static async getPaperContent(itemID: number): Promise<string> {
+    try {
+      const text = await Zotero.FullText.getItemText(itemID);
+      return text || '无法获取文献内容，请确保 PDF 已被索引';
+    } catch (error) {
+      return `获取内容失败: ${error}`;
+    }
+  }
+
+  // 搜索论文
+  static searchPapers(query: string, limit: number = 10) {
+    const search = new Zotero.Search();
+    search.addCondition('title', 'contains', query);
+    const results = search.search();
+    return results.slice(0, limit).map(id => this.getPaperInfo(id));
+  }
+
+  // 获取当前选中的论文
+  static getSelectedItem() {
+    const pane = Zotero.getActiveZoteroPane();
+    const items = pane.getSelectedItems();
+    return items.length > 0 ? items[0] : null;
+  }
+}
+```
+
+---
+
+## 14. UI 组件 CSS 设计
+
+### 14.1 侧边栏样式
+
+```css
+/* addon/content/chatPanel.css */
+
+.marginalia-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.marginalia-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.marginalia-message {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.marginalia-message.user {
+  justify-content: flex-end;
+}
+
+.marginalia-message.assistant {
+  justify-content: flex-start;
+}
+
+.marginalia-message-content {
+  max-width: 85%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  word-wrap: break-word;
+  line-height: 1.5;
+}
+
+.marginalia-message.user .marginalia-message-content {
+  background: #007AFF;
+  color: white;
+}
+
+.marginalia-message.assistant .marginalia-message-content {
+  background: #E5E5EA;
+  color: #000;
+}
+
+.marginalia-input-area {
+  padding: 12px;
+  border-top: 1px solid #E5E5EA;
+  display: flex;
+  gap: 8px;
+}
+
+.marginalia-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #D1D1D6;
+  border-radius: 6px;
+  font-size: 14px;
+  resize: none;
+  max-height: 100px;
+}
+
+.marginalia-button {
+  padding: 8px 16px;
+  background: #007AFF;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.marginalia-button:hover {
+  background: #0051D5;
+}
+
+.marginalia-button:disabled {
+  background: #D1D1D6;
+  cursor: not-allowed;
+}
+
+.marginalia-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #999;
+  font-size: 13px;
+}
+
+.marginalia-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #E5E5EA;
+  border-top-color: #007AFF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.marginalia-tool-call {
+  background: #F5F5F5;
+  border-left: 3px solid #007AFF;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+.marginalia-options-menu {
+  position: absolute;
+  background: white;
+  border: 1px solid #D1D1D6;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+
+.marginalia-options-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.marginalia-options-menu button:hover {
+  background: #F5F5F5;
+}
+```
+
+---
+
+## 15. 测试策略
+
+### 15.1 单元测试
+
+```typescript
+// test/apiClient.test.ts
+describe('APIClient', () => {
+  it('should handle streaming responses', async () => {
+    // Mock fetch
+    // Test stream parsing
+  });
+
+  it('should handle API errors', async () => {
+    // Test error handling
+  });
+
+  it('should test connection', async () => {
+    // Test connection validation
+  });
+});
+```
+
+### 15.2 集成测试
+
+- 测试侧边栏 UI 加载
+- 测试对话保存和加载
+- 测试工具调用功能
+- 测试设置页面保存
+
+### 15.3 手动测试清单
+
+- [ ] 侧边栏正常显示
+- [ ] 可以发送消息并收到回复
+- [ ] 流式输出正常显示
+- [ ] 对话历史正确保存
+- [ ] 工具调用功能正常
+- [ ] 设置页面可以保存配置
+- [ ] API 连接测试功能正常
+
+---
+
+## 16. 部署和发布流程
+
+### 16.1 构建流程
+
+```bash
+# 开发模式
+npm run start
+
+# 构建生产版本
+npm run build
+
+# 发布
+npm run release
+```
+
+### 16.2 版本管理
+
+- 遵循 Semantic Versioning (SemVer)
+- 在 `package.json` 中更新版本号
+- 在 `addon/manifest.json` 中更新版本号
+
+### 16.3 发布检查清单
+
+- [ ] 所有测试通过
+- [ ] 代码审查完成
+- [ ] 文档已更新
+- [ ] 版本号已更新
+- [ ] CHANGELOG 已更新
+- [ ] 构建成功
+- [ ] 发布到 Zotero 插件市场
+
+---
+
+## 17. 后续优化方向
+
+- 支持更多 LLM 提供商（Claude、Gemini 等）
 - 对话搜索功能
 - 对话分支管理
 - 自定义快捷键
 - 主题和外观定制
+- 离线模式支持
+- 对话导入/导出功能
+- 批量处理多篇论文
