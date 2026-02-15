@@ -42,13 +42,17 @@ export class ChatPanel {
         body.style.flexDirection = "column";
         body.style.height = "100%";
         body.style.overflow = "hidden";
+        body.style.boxSizing = "border-box";
 
         // 确保父容器也有正确的高度
-        const parent = body.parentElement as HTMLElement | null;
-        if (parent) {
+        let parent = body.parentElement as HTMLElement | null;
+        while (parent) {
           parent.style.height = "100%";
-          parent.style.display = "flex";
-          parent.style.flexDirection = "column";
+          parent.style.overflow = "hidden";
+          parent.style.boxSizing = "border-box";
+          parent = parent.parentElement as HTMLElement | null;
+          // 只向上遍历 3 层
+          if (parent && parent.tagName === "HTML") break;
         }
 
         if (!body.querySelector("#marginalia-container")) {
@@ -63,10 +67,10 @@ export class ChatPanel {
                 id="marginalia-input"
                 class="marginalia-input"
                 placeholder="Ask about this paper..."
-                rows="2"
+                rows="1"
               ></textarea>
               <button id="marginalia-send" class="marginalia-button">Send</button>
-              <button id="marginalia-options" class="marginalia-button" style="width: auto; padding: 8px 12px;">+</button>
+              <button id="marginalia-options" class="marginalia-button marginalia-button-options">+</button>
             </div>
           `;
           this.container = container;
