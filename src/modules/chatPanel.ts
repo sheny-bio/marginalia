@@ -40,28 +40,26 @@ export class ChatPanel {
         icon: `chrome://${addon.data.config.addonRef}/content/icons/favicon.png`,
       },
       onRender: ({ body, item }) => {
-        // 设置 body 样式
+        // 设置 body 样式 - 让 Zotero 管理高度，不使用 !important
         body.style.cssText = `
-          display: flex !important;
-          flex-direction: column !important;
-          height: 500px !important;
-          min-height: 300px !important;
-          max-height: 100% !important;
-          overflow: hidden !important;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
         `;
 
         if (!body.querySelector("#marginalia-container")) {
           const doc = body.ownerDocument!;
 
-          // 创建容器
+          // 创建容器 - 使用 min/max-height 而非固定高度
           const container = doc.createElement("div");
           container.id = "marginalia-container";
           container.className = "marginalia-container";
           container.style.cssText = `
-            display: flex !important;
-            flex-direction: column !important;
-            height: 100% !important;
-            overflow: hidden !important;
+            display: flex;
+            flex-direction: column;
+            min-height: 300px;
+            max-height: 600px;
+            overflow: hidden;
           `;
 
           // 创建消息区域
@@ -81,8 +79,41 @@ export class ChatPanel {
           textarea.className = "marginalia-input";
           textarea.placeholder = "Ask about this paper...";
           textarea.rows = 1;
-          textarea.style.cssText = "flex: 1; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; resize: none; font-size: 14px; font-family: inherit;";
+          textarea.style.cssText = `
+            flex: 1;
+            min-width: 0;
+            padding: 12px 16px;
+            background: #F5F5F5;
+            border: 1px solid #E5E5E5;
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #171717;
+            resize: none;
+            min-height: 44px;
+            max-height: 120px;
+            line-height: 1.5;
+            overflow-y: auto;
+            transition: border-color 0.2s, box-shadow 0.2s;
+          `;
           this.inputElement = textarea;
+
+          // 输入框自适应高度
+          textarea.addEventListener("input", () => {
+            textarea.style.height = "auto";
+            const scrollHeight = Math.min(textarea.scrollHeight, 120);
+            textarea.style.height = `${scrollHeight}px`;
+          });
+
+          // 输入框焦点样式
+          textarea.addEventListener("focus", () => {
+            textarea.style.borderColor = "#D4AF37";
+            textarea.style.boxShadow = "0 0 0 3px rgba(212, 175, 55, 0.15)";
+          });
+          textarea.addEventListener("blur", () => {
+            textarea.style.borderColor = "#E5E5E5";
+            textarea.style.boxShadow = "none";
+          });
 
           // 创建发送按钮
           const sendBtn = doc.createElement("button");
@@ -215,6 +246,8 @@ export class ChatPanel {
     }
 
     input.value = "";
+    // 重置输入框高度
+    input.style.height = "auto";
     this.addMessage("user", message);
     this.addMessage("assistant", ""); // 创建空的 assistant 消息用于流式更新
     this.showLoading();
@@ -227,8 +260,52 @@ export class ChatPanel {
       await this.saveMessage("assistant", response, toolCalls.length > 0 ? toolCalls : undefined);
     } catch (error) {
       this.removeLoading();
-      this.updateLastMessage(`Error: ${error}`);
+      this.showErrorMessage(error);
     }
+  }
+
+  // 显示错误消息
+  private showErrorMessage(error: unknown) {
+    const messagesDiv = this.container?.querySelector("#marginalia-messages");
+    const doc = this.container?.ownerDocument;
+    if (!doc || !messagesDiv) return;
+
+    // 移除空的 assistant 消息
+    const lastAssistant = messagesDiv.querySelector(".marginalia-message.assistant:last-of-type");
+    if (lastAssistant) {
+      const content = lastAssistant.querySelector(".marginalia-message-content");
+      if (content && !content.textContent?.trim()) {
+        lastAssistant.remove();
+      }
+    }
+
+    const errorEl = doc.createElement("div");
+    errorEl.className = "marginalia-error";
+    errorEl.style.cssText = `
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 16px;
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-radius: 12px;
+      margin: 8px 0;
+      color: #DC2626;
+      font-size: 13px;
+      line-height: 1.5;
+    `;
+
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    errorEl.innerHTML = `
+      <span style="flex-shrink: 0;">⚠️</span>
+      <div>
+        <div style="font-weight: 500; margin-bottom: 4px;">Something went wrong</div>
+        <div style="color: #991B1B; font-size: 12px;">${this.escapeHtml(errorMessage)}</div>
+      </div>
+    `;
+
+    messagesDiv.appendChild(errorEl);
+    this.scrollToBottom();
   }
 
   private addMessage(role: string, content: string, toolCall?: ToolCall, toolResult?: string) {
@@ -287,7 +364,19 @@ export class ChatPanel {
     }
 
     messagesDiv.appendChild(messageEl);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    this.scrollToBottom();
+  }
+
+  // 平滑滚动到底部
+  private scrollToBottom() {
+    const messagesDiv = this.container?.querySelector("#marginalia-messages") as HTMLElement;
+    if (!messagesDiv) return;
+
+    // 使用 smooth 滚动
+    messagesDiv.scrollTo({
+      top: messagesDiv.scrollHeight,
+      behavior: "smooth",
+    });
   }
 
   private showLoading() {
@@ -297,8 +386,40 @@ export class ChatPanel {
     const loadingEl = doc.createElement("div");
     loadingEl.className = "marginalia-loading";
     loadingEl.id = "marginalia-loading";
-    loadingEl.innerHTML = `<div class="marginalia-spinner"></div><span>Thinking...</span>`;
+    loadingEl.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      color: #6B7280;
+      font-size: 13px;
+    `;
+    loadingEl.innerHTML = `
+      <div class="marginalia-spinner" style="
+        width: 18px;
+        height: 18px;
+        border: 2px solid #E5E5E5;
+        border-top-color: #D4AF37;
+        border-radius: 50%;
+        animation: marginalia-spin 0.8s linear infinite;
+      "></div>
+      <span>Thinking...</span>
+    `;
+
+    // 添加动画样式
+    if (!doc.querySelector("#marginalia-spinner-style")) {
+      const style = doc.createElement("style");
+      style.id = "marginalia-spinner-style";
+      style.textContent = `
+        @keyframes marginalia-spin {
+          to { transform: rotate(360deg); }
+        }
+      `;
+      doc.head?.appendChild(style);
+    }
+
     messagesDiv.appendChild(loadingEl);
+    this.scrollToBottom();
   }
 
   private removeLoading() {
