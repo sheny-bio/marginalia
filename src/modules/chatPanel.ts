@@ -181,11 +181,11 @@ export class ChatPanel {
     });
   }
 
-  private onItemChange(item: any) {
+  private async onItemChange(item: any) {
     if (item) {
       this.currentItemID = item.id;
       this.currentItem = item;
-      this.loadMessages();
+      await this.loadMessages();
     }
   }
 
@@ -484,7 +484,9 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
   private async loadMessages() {
     if (!this.currentItemID) return;
 
+    ztoolkit.log("[ChatPanel] Loading messages for itemID:", this.currentItemID);
     const loadedMessages = await this.storageManager.getMessages(this.currentItemID);
+    ztoolkit.log("[ChatPanel] Loaded", loadedMessages.length, "messages from storage");
     this.messages = loadedMessages.map((msg) => ({
       role: msg.role as "user" | "assistant" | "system",
       content: msg.content,
@@ -508,12 +510,14 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
   private async saveMessage(role: string, content: string, toolCalls?: ToolCall[]) {
     if (!this.currentItemID) return;
 
+    ztoolkit.log("[ChatPanel] Saving message:", { role, contentLength: content.length, itemID: this.currentItemID });
     await this.storageManager.saveMessage(this.currentItemID, role, content, toolCalls);
     this.messages.push({
       role: role as "user" | "assistant" | "system",
       content,
       toolCalls,
     });
+    ztoolkit.log("[ChatPanel] Message saved, total messages:", this.messages.length);
 
     // 检查并执行对话轮数限制
     await this.enforceHistoryLimit();

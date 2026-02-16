@@ -1,119 +1,150 @@
 export class StorageManager {
-  private dbConnection: any;
+  private dataDir: string = "";
 
   async init() {
-    await this.createTables();
+    ztoolkit.log("[StorageManager] Initializing...");
+    // 使用 Zotero 数据目录下的 marginalia 文件夹
+    this.dataDir = Zotero.DataDirectory.dir + "/marginalia";
+    ztoolkit.log("[StorageManager] Data directory:", this.dataDir);
+
+    // 确保目录存在
+    if (!(await IOUtils.exists(this.dataDir))) {
+      await IOUtils.makeDirectory(this.dataDir, { createAncestors: true });
+      ztoolkit.log("[StorageManager] Created data directory");
+    }
+    ztoolkit.log("[StorageManager] Initialized successfully");
   }
 
-  private async createTables() {
-    const conversationsTable = `
-      CREATE TABLE IF NOT EXISTS marginalia_conversations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        itemID INTEGER NOT NULL,
-        role TEXT NOT NULL,
-        content TEXT NOT NULL,
-        timestamp INTEGER NOT NULL,
-        toolCalls JSON,
-        FOREIGN KEY (itemID) REFERENCES items(itemID)
-      )
-    `;
+  private getConversationFilePath(itemID: number): string {
+    return this.dataDir + `/conversation_${itemID}.json`;
+  }
 
-    const settingsTable = `
-      CREATE TABLE IF NOT EXISTS marginalia_settings (
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL
-      )
-    `;
-
-    try {
-      await Zotero.DB.queryAsync(conversationsTable);
-      await Zotero.DB.queryAsync(settingsTable);
-    } catch (error) {
-      ztoolkit.log("Error creating tables:", error);
-    }
+  private getSettingsFilePath(): string {
+    return this.dataDir + "/settings.json";
   }
 
   async saveMessage(itemID: number, role: string, content: string, toolCalls?: any) {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const sql = `
-      INSERT INTO marginalia_conversations (itemID, role, content, timestamp, toolCalls)
-      VALUES (?, ?, ?, ?, ?)
-    `;
+    ztoolkit.log("[StorageManager] Saving message:", { itemID, role, contentLength: content.length });
+
+    const filePath = this.getConversationFilePath(itemID);
+    let messages: any[] = [];
+
+    // 读取现有消息
     try {
-      await Zotero.DB.queryAsync(sql, [itemID, role, content, timestamp, toolCalls ? JSON.stringify(toolCalls) : null]);
+      if (await IOUtils.exists(filePath)) {
+        const data = await IOUtils.readUTF8(filePath);
+        messages = JSON.parse(data);
+      }
     } catch (error) {
-      ztoolkit.log("Error saving message:", error);
+      ztoolkit.log("[StorageManager] Error reading existing messages:", error);
+    }
+
+    // 添加新消息
+    messages.push({
+      role,
+      content,
+      timestamp: Math.floor(Date.now() / 1000),
+      toolCalls: toolCalls || undefined,
+    });
+
+    // 保存到文件
+    try {
+      await IOUtils.writeUTF8(filePath, JSON.stringify(messages, null, 2));
+      ztoolkit.log("[StorageManager] Message saved successfully to:", filePath);
+    } catch (error) {
+      ztoolkit.log("[StorageManager] Error saving message:", error);
+      throw error;
     }
   }
 
   async getMessages(itemID: number): Promise<Array<{ role: string; content: string; toolCalls?: any }>> {
-    const sql = `
-      SELECT role, content, toolCalls FROM marginalia_conversations
-      WHERE itemID = ?
-      ORDER BY timestamp ASC
-    `;
+    ztoolkit.log("[StorageManager] Loading messages for itemID:", itemID);
+
+    const filePath = this.getConversationFilePath(itemID);
+
     try {
-      const rows = (await Zotero.DB.queryAsync(sql, [itemID])) as any[];
-      return (
-        rows?.map((row: any) => ({
-          role: row.role,
-          content: row.content,
-          toolCalls: row.toolCalls ? JSON.parse(row.toolCalls) : undefined,
-        })) || []
-      );
+      if (await IOUtils.exists(filePath)) {
+        const data = await IOUtils.readUTF8(filePath);
+        const messages = JSON.parse(data);
+        ztoolkit.log("[StorageManager] Loaded", messages.length, "messages from:", filePath);
+        return messages.map((msg: any) => ({
+          role: msg.role,
+          content: msg.content,
+          toolCalls: msg.toolCalls,
+        }));
+      }
     } catch (error) {
-      ztoolkit.log("Error loading messages:", error);
-      return [];
+      ztoolkit.log("[StorageManager] Error loading messages:", error);
     }
+
+    ztoolkit.log("[StorageManager] No messages found for itemID:", itemID);
+    return [];
   }
 
   async clearMessages(itemID: number) {
-    const sql = `DELETE FROM marginalia_conversations WHERE itemID = ?`;
+    const filePath = this.getConversationFilePath(itemID);
     try {
-      await Zotero.DB.queryAsync(sql, [itemID]);
+      if (await IOUtils.exists(filePath)) {
+        await IOUtils.remove(filePath);
+        ztoolkit.log("[StorageManager] Cleared messages for itemID:", itemID);
+      }
     } catch (error) {
-      ztoolkit.log("Error clearing messages:", error);
+      ztoolkit.log("[StorageManager] Error clearing messages:", error);
     }
   }
 
   async deleteOldestMessages(itemID: number, count: number) {
-    // 删除最早的 count 条消息
-    const sql = `
-      DELETE FROM marginalia_conversations
-      WHERE id IN (
-        SELECT id FROM marginalia_conversations
-        WHERE itemID = ?
-        ORDER BY timestamp ASC
-        LIMIT ?
-      )
-    `;
+    const filePath = this.getConversationFilePath(itemID);
     try {
-      await Zotero.DB.queryAsync(sql, [itemID, count]);
+      if (await IOUtils.exists(filePath)) {
+        const data = await IOUtils.readUTF8(filePath);
+        let messages = JSON.parse(data);
+        if (messages.length > count) {
+          messages = messages.slice(count);
+          await IOUtils.writeUTF8(filePath, JSON.stringify(messages, null, 2));
+          ztoolkit.log("[StorageManager] Deleted oldest", count, "messages");
+        }
+      }
     } catch (error) {
-      ztoolkit.log("Error deleting oldest messages:", error);
+      ztoolkit.log("[StorageManager] Error deleting oldest messages:", error);
     }
   }
 
   async saveSetting(key: string, value: string) {
-    const sql = `
-      INSERT OR REPLACE INTO marginalia_settings (key, value)
-      VALUES (?, ?)
-    `;
+    const filePath = this.getSettingsFilePath();
+    let settings: Record<string, string> = {};
+
     try {
-      await Zotero.DB.queryAsync(sql, [key, value]);
+      if (await IOUtils.exists(filePath)) {
+        const data = await IOUtils.readUTF8(filePath);
+        settings = JSON.parse(data);
+      }
     } catch (error) {
-      ztoolkit.log("Error saving setting:", error);
+      ztoolkit.log("[StorageManager] Error reading settings:", error);
+    }
+
+    settings[key] = value;
+
+    try {
+      await IOUtils.writeUTF8(filePath, JSON.stringify(settings, null, 2));
+    } catch (error) {
+      ztoolkit.log("[StorageManager] Error saving setting:", error);
     }
   }
 
   async getSetting(key: string): Promise<string | null> {
-    const sql = `SELECT value FROM marginalia_settings WHERE key = ?`;
+    const filePath = this.getSettingsFilePath();
+
     try {
-      const rows = (await Zotero.DB.queryAsync(sql, [key])) as any[];
-      return rows?.[0]?.value || null;
+      if (await IOUtils.exists(filePath)) {
+        const data = await IOUtils.readUTF8(filePath);
+        const settings = JSON.parse(data);
+        return settings[key] || null;
+      }
     } catch (error) {
-      ztoolkit.log("Error loading setting:", error);
-      return null;
+      ztoolkit.log("[StorageManager] Error loading setting:", error);
     }
+
+    return null;
   }
 }
