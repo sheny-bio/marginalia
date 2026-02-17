@@ -47,11 +47,11 @@ export class ZoteroAPI {
           // 方法2: 尝试从缓存文件读取
           try {
             ztoolkit.log("[ZoteroAPI] Trying cache file");
-            const cacheFile = Zotero.Fulltext.getItemCacheFile(attachmentID);
+            const cacheFile = Zotero.Fulltext.getItemCacheFile(attachment);
             ztoolkit.log("[ZoteroAPI] Cache file:", cacheFile?.path);
             if (cacheFile && (await cacheFile.exists())) {
               const text = await Zotero.File.getContentsAsync(cacheFile);
-              ztoolkit.log("[ZoteroAPI] Cache file content length:", text?.length);
+              ztoolkit.log("[ZoteroAPI] Cache file content length:", typeof text === 'string' ? text.length : 'N/A');
               if (text) {
                 return text as string;
               }

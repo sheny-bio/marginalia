@@ -5,7 +5,6 @@ export class MarkdownRenderer {
     marked.setOptions({
       breaks: true,
       gfm: true,
-      xhtml: true, // 使用 XHTML 兼容的自闭合标签
     });
   }
 
