@@ -1020,9 +1020,10 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     const doc = messageEl.ownerDocument;
     if (!doc) return;
 
-    const wrapper = doc.createElement("div");
-    wrapper.className = "marginalia-message-wrapper";
-    wrapper.style.cssText = "position: relative;";
+    const contentDiv = messageEl.querySelector(".marginalia-message-content") as HTMLElement;
+    if (!contentDiv) return;
+
+    contentDiv.style.position = "relative";
 
     const copyBtn = doc.createElement("button");
     copyBtn.className = "marginalia-copy-btn";
@@ -1042,19 +1043,16 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
       transition: opacity 0.2s;
     `;
 
-    wrapper.addEventListener("mouseenter", () => {
+    contentDiv.addEventListener("mouseenter", () => {
       copyBtn.style.opacity = "1";
     });
-    wrapper.addEventListener("mouseleave", () => {
+    contentDiv.addEventListener("mouseleave", () => {
       copyBtn.style.opacity = "0";
     });
 
     copyBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      // 动态获取当前消息内容，而不是使用绑定时的内容
-      const contentDiv = messageEl.querySelector(".marginalia-message-content");
-      const currentContent = contentDiv?.textContent || "";
-      ztoolkit.log("[Copy] Getting content from DOM, length:", currentContent.length);
+      const currentContent = contentDiv.textContent || "";
       await this.copyToClipboard(currentContent);
       copyBtn.textContent = "Copied!";
       copyBtn.style.background = "#D4AF37";
@@ -1068,11 +1066,6 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
       }, 2000);
     });
 
-    // 将原有内容移到 wrapper 中
-    while (messageEl.firstChild) {
-      wrapper.appendChild(messageEl.firstChild);
-    }
-    wrapper.appendChild(copyBtn);
-    messageEl.appendChild(wrapper);
+    contentDiv.appendChild(copyBtn);
   }
 }
