@@ -16,6 +16,7 @@ export class ChatPanel {
   private inputElement: HTMLTextAreaElement | null = null;
   private currentItemID: number | null = null;
   private apiClient: APIClient | null = null;
+  private lastAPIConfig: { url: string; apiKey: string; model: string } | null = null;
   private storageManager: StorageManager;
   private settingsManager: SettingsManager;
   private messages: StoredMessage[] = [];
@@ -210,6 +211,7 @@ export class ChatPanel {
     input.value = "";
     // 重置输入框高度
     input.style.height = "auto";
+    this.removeWelcomePage();
     this.addMessage("user", message);
     this.addMessage("assistant", ""); // 创建空的 assistant 消息用于流式更新
     this.showLoading();
@@ -390,9 +392,17 @@ export class ChatPanel {
   }
 
   private async callAPI(userMessage: string): Promise<{ response: string; toolCalls: ToolCall[] }> {
-    if (!this.apiClient) {
-      const config = await this.settingsManager.getAPIConfig();
+    // 每次调用时检查配置是否变化，变化则重建 APIClient
+    const config = await this.settingsManager.getAPIConfig();
+    if (
+      !this.apiClient ||
+      !this.lastAPIConfig ||
+      this.lastAPIConfig.url !== config.url ||
+      this.lastAPIConfig.apiKey !== config.apiKey ||
+      this.lastAPIConfig.model !== config.model
+    ) {
       this.apiClient = new APIClient(config);
+      this.lastAPIConfig = { url: config.url, apiKey: config.apiKey, model: config.model };
     }
 
     const paperInfo = ZoteroAPI.getPaperInfo(this.currentItemID!);
@@ -495,15 +505,112 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     const messagesDiv = this.container?.querySelector("#marginalia-messages");
     if (messagesDiv) {
       messagesDiv.innerHTML = "";
-      for (const msg of this.messages) {
-        this.addMessage(msg.role, msg.content);
-        // 如果有工具调用，显示工具调用卡片
-        if (msg.toolCalls && msg.toolCalls.length > 0) {
-          for (const toolCall of msg.toolCalls) {
-            this.addMessage("system", "", toolCall, "Result loaded from history");
+      if (this.messages.length === 0) {
+        this.showWelcomePage();
+      } else {
+        for (const msg of this.messages) {
+          this.addMessage(msg.role, msg.content);
+          // 如果有工具调用，显示工具调用卡片
+          if (msg.toolCalls && msg.toolCalls.length > 0) {
+            for (const toolCall of msg.toolCalls) {
+              this.addMessage("system", "", toolCall, "Result loaded from history");
+            }
           }
         }
       }
+    }
+  }
+
+  private showWelcomePage() {
+    const messagesDiv = this.container?.querySelector("#marginalia-messages");
+    const doc = this.container?.ownerDocument;
+    if (!doc || !messagesDiv) return;
+
+    const welcome = doc.createElement("div");
+    welcome.id = "marginalia-welcome";
+    welcome.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      padding: 32px 24px;
+      text-align: center;
+      min-height: 300px;
+    `;
+
+    const title = this.currentItem?.getField?.("title") || "";
+    const truncatedTitle = title.length > 60 ? title.substring(0, 60) + "..." : title;
+
+    welcome.innerHTML = `
+      <div style="
+        width: 48px; height: 48px; margin-bottom: 16px;
+        background: linear-gradient(135deg, #D4AF37 0%, #F5D76E 100%);
+        border-radius: 12px; display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+      ">
+        <span style="font-size: 24px; color: #fff; font-weight: 700;">M</span>
+      </div>
+      <div style="font-size: 16px; font-weight: 600; color: #171717; margin-bottom: 6px;">
+        Marginalia
+      </div>
+      <div style="font-size: 13px; color: #9CA3AF; margin-bottom: ${truncatedTitle ? "8px" : "24px"}; line-height: 1.4;">
+        Your AI research assistant
+      </div>
+      ${truncatedTitle ? `<div style="font-size: 12px; color: #6B7280; margin-bottom: 24px; padding: 6px 12px; background: #F5F5F5; border-radius: 6px; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeHtml(truncatedTitle)}</div>` : ""}
+      <div id="marginalia-welcome-suggestions" style="display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 280px;"></div>
+    `;
+
+    messagesDiv.appendChild(welcome);
+
+    // 添加快捷提问按钮
+    const suggestions = [
+      "Summarize this paper",
+      "What are the key contributions?",
+      "Explain the methodology",
+      "What are the limitations?",
+    ];
+
+    const suggestionsContainer = welcome.querySelector("#marginalia-welcome-suggestions");
+    if (suggestionsContainer) {
+      for (const text of suggestions) {
+        const btn = doc.createElement("button");
+        btn.textContent = text;
+        btn.style.cssText = `
+          padding: 10px 16px;
+          background: #FFFFFF;
+          border: 1px solid #E5E5E5;
+          border-radius: 10px;
+          font-size: 13px;
+          color: #171717;
+          cursor: pointer;
+          font-family: inherit;
+          text-align: left;
+          transition: background-color 0.15s, border-color 0.15s;
+        `;
+        btn.addEventListener("mouseenter", () => {
+          btn.style.background = "#F5F5F5";
+          btn.style.borderColor = "#D4AF37";
+        });
+        btn.addEventListener("mouseleave", () => {
+          btn.style.background = "#FFFFFF";
+          btn.style.borderColor = "#E5E5E5";
+        });
+        btn.addEventListener("click", () => {
+          if (this.inputElement) {
+            this.inputElement.value = text;
+          }
+          this.sendMessage();
+        });
+        suggestionsContainer.appendChild(btn);
+      }
+    }
+  }
+
+  private removeWelcomePage() {
+    const welcome = this.container?.querySelector("#marginalia-welcome");
+    if (welcome) {
+      welcome.remove();
     }
   }
 
@@ -781,6 +888,7 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
       messagesDiv.innerHTML = "";
     }
 
+    this.showWelcomePage();
     this.showToast("History cleared!");
   }
 
