@@ -845,13 +845,8 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
   }
 
   private showClearConfirmDialog() {
-    ztoolkit.log("[Dialog] showClearConfirmDialog called");
     const doc = this.container?.ownerDocument;
-    if (!doc) {
-      ztoolkit.log("[Dialog] No document found");
-      return;
-    }
-    ztoolkit.log("[Dialog] Creating dialog");
+    if (!doc) return;
 
     const overlay = doc.createElement("div");
     overlay.className = "marginalia-dialog-overlay";
@@ -920,18 +915,11 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     overlay.appendChild(dialog);
     this.container?.appendChild(overlay);
 
-    setTimeout(() => {
-      overlay.style.opacity = "1";
-      dialog.style.transform = "scale(1)";
-    }, 10);
-
     cancelBtn.addEventListener("click", () => {
-      ztoolkit.log("[Dialog] Cancel button clicked");
       overlay.remove();
     });
 
     confirmBtn.addEventListener("click", async () => {
-      ztoolkit.log("[Dialog] Confirm button clicked");
       await this.clearHistory();
       overlay.remove();
     });
@@ -941,18 +929,11 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
         overlay.remove();
       }
     });
-
-    ztoolkit.log("[Dialog] Dialog created and appended to body");
   }
 
   private async clearHistory() {
-    ztoolkit.log("[clearHistory] Starting clear history");
-    if (!this.currentItemID) {
-      ztoolkit.log("[clearHistory] No currentItemID, returning");
-      return;
-    }
+    if (!this.currentItemID) return;
 
-    ztoolkit.log("[clearHistory] Clearing messages for itemID:", this.currentItemID);
     await this.storageManager.clearMessages(this.currentItemID);
     this.messages = [];
 
@@ -963,7 +944,6 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
 
     this.showWelcomePage();
     this.showToast(getString("chat-toast-cleared"));
-    ztoolkit.log("[clearHistory] Clear history completed");
   }
 
   private async copyToClipboard(text: string) {
@@ -1146,14 +1126,8 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
   // PDF 引用跳转
   private async navigateToCitation(pageNum: number, text: string) {
     try {
-      ztoolkit.log(`[ChatPanel] Navigating to page ${pageNum}, text: ${text}`);
-
-      // 获取当前论文的 PDF 附件 ID
       const item = Zotero.Items.get(this.currentItemID!);
-      if (!item) {
-        this.showToast('无法找到论文');
-        return;
-      }
+      if (!item) return;
 
       let pdfAttachmentID: number | null = null;
       const attachmentIDs = item.getAttachments();
@@ -1165,10 +1139,7 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
         }
       }
 
-      if (!pdfAttachmentID) {
-        this.showToast('未找到 PDF 附件');
-        return;
-      }
+      if (!pdfAttachmentID) return;
 
       // 查找当前论文的 reader（通过附件 ID 匹配）
       const readers = Zotero.Reader._readers || [];
@@ -1180,13 +1151,8 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
         }
       }
 
-      ztoolkit.log(`[ChatPanel] pdfAttachmentID: ${pdfAttachmentID}, found reader: ${!!currentReader}`);
-
       if (!currentReader) {
-        // Reader 未打开,先打开
         await Zotero.Reader.open(pdfAttachmentID, { pageIndex: pageNum - 1 });
-        ztoolkit.log(`[ChatPanel] Opened reader at page ${pageNum}`);
-        // 重新查找 reader
         const updatedReaders = Zotero.Reader._readers || [];
         for (const reader of updatedReaders) {
           if ((reader as any).itemID === pdfAttachmentID) {
@@ -1195,9 +1161,7 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
           }
         }
       } else {
-        // Reader 已打开,跳转
         await currentReader.navigate({ pageIndex: pageNum - 1 });
-        ztoolkit.log(`[ChatPanel] Navigated to page ${pageNum}`);
       }
 
       // 搜索并高亮文字
@@ -1205,43 +1169,30 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
         setTimeout(() => {
           try {
             const searchText = decodeURIComponent(text).trim();
-            ztoolkit.log(`[ChatPanel] Searching for text: ${searchText}`);
-
             const ir = (currentReader as any)._internalReader;
-            if (ir) {
-              // 先打开搜索弹窗
-              ir.toggleFindPopup({ primary: true, open: true });
+            if (!ir) return;
 
-              // 等待弹窗打开后,设置搜索词并触发搜索
-              setTimeout(() => {
-                try {
-                  // 更新 findState
-                  ir.setFindState({
-                    ...ir._state.primaryViewFindState,
-                    popupOpen: true,
-                    active: true,
-                    query: searchText,
-                    highlightAll: true,
-                    caseSensitive: false,
-                    entireWord: false,
-                  });
-                  ztoolkit.log(`[ChatPanel] setFindState called`);
-                } catch (e1) {
-                  ztoolkit.log(`[ChatPanel] setFindState failed:`, e1);
-                  // 备选方案: 直接修改状态并调用 findNext
-                  try {
-                    ir._state.primaryViewFindState.query = searchText;
-                    ir._state.primaryViewFindState.active = true;
-                    ir._state.primaryViewFindState.highlightAll = true;
-                    ir._updateState();
-                    ir.findNext(true);
-                    ztoolkit.log(`[ChatPanel] Fallback search triggered`);
-                  } catch (e2) {
-                    ztoolkit.log(`[ChatPanel] Fallback also failed:`, e2);
-                  }
-                }
-              }, 300);
-            }
+            ir.toggleFindPopup({ primary: true, open: true });
+
+            setTimeout(() => {
+              try {
+                ir.setFindState({
+                  ...ir._state.primaryViewFindState,
+                  popupOpen: true,
+                  active: true,
+                  query: searchText,
+                  highlightAll: true,
+                  caseSensitive: false,
+                  entireWord: false,
+                });
+              } catch {
+                ir._state.primaryViewFindState.query = searchText;
+                ir._state.primaryViewFindState.active = true;
+                ir._state.primaryViewFindState.highlightAll = true;
+                ir._updateState();
+                ir.findNext(true);
+              }
+            }, 300);
           } catch (e) {
             ztoolkit.log('[ChatPanel] Search failed:', e);
           }
@@ -1249,7 +1200,6 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
       }
     } catch (error) {
       ztoolkit.log('[ChatPanel] Error navigating to citation:', error);
-      this.showToast('无法跳转到引用位置');
     }
   }
 }
