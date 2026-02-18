@@ -112,7 +112,7 @@ export class ChatPanel {
           // 创建按钮容器
           const actionsDiv = doc.createElement("div");
           actionsDiv.className = "marginalia-input-actions";
-          actionsDiv.style.cssText = "display: flex; align-items: center; gap: 4px; flex-shrink: 0;";
+          actionsDiv.style.cssText = "display: flex; align-items: center; gap: 8px; flex-shrink: 0;";
 
           // 创建选项按钮包装器
           const optionsWrapper = doc.createElement("div");
@@ -315,7 +315,7 @@ export class ChatPanel {
       messageEl.appendChild(body);
     } else {
       messageEl.className = `marginalia-message ${role}`;
-      messageEl.style.cssText = `display: flex; ${role === "user" ? "justify-content: flex-end;" : "justify-content: flex-start;"}`;
+      messageEl.style.cssText = `display: flex; margin-bottom: 12px; ${role === "user" ? "justify-content: flex-end;" : "justify-content: flex-start;"}`;
 
       const contentDiv = doc.createElement("div");
       contentDiv.className = "marginalia-message-content";
@@ -704,7 +704,6 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
 
     const menuItems = [
       { id: "export-md", icon: "📄", label: getString("chat-menu-export"), action: () => this.exportAsMarkdown() },
-      { id: "copy-all", icon: "📋", label: getString("chat-menu-copy-all"), action: () => this.copyAllMessages() },
       { id: "divider", type: "divider" },
       { id: "clear-history", icon: "🗑️", label: getString("chat-menu-clear"), danger: true, action: () => this.showClearConfirmDialog() },
     ];
@@ -775,12 +774,6 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     dropdown.style.opacity = "0";
     dropdown.style.visibility = "hidden";
     dropdown.style.transform = "translateY(8px)";
-  }
-
-  private async copyAllMessages() {
-    const markdown = this.generateMarkdownContent();
-    await this.copyToClipboard(markdown);
-    this.showToast(getString("chat-toast-copied"));
   }
 
   private async exportAsMarkdown() {
