@@ -14,7 +14,7 @@ export class MarkdownRenderer {
       // 匹配格式: [文字 (p.X)](#cite:X:引用文字)
       content = content.replace(
         /\[([^\]]+?)\s*\(p\.(\d+)\)\]\(#cite:(\d+):([^)]+)\)/g,
-        '$1 <span class="pdf-cite-link" data-page="$3" data-text="$4" style="display: inline; color: #D4AF37; cursor: pointer; font-size: 0.85em; font-weight: 500;">[p.$2]</span>'
+        '$1 <span class="pdf-cite-link" data-page="$3" data-text="$4" style="display: inline; color: #E5A700; cursor: pointer; font-size: 0.85em; font-weight: 500;">[p.$2]</span>'
       );
 
       let html = marked(content) as string;

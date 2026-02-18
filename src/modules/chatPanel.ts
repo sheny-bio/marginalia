@@ -1148,84 +1148,104 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     try {
       ztoolkit.log(`[ChatPanel] Navigating to page ${pageNum}, text: ${text}`);
 
-      // 获取所有打开的 reader
-      const readers = Zotero.Reader._readers || [];
+      // 获取当前论文的 PDF 附件 ID
+      const item = Zotero.Items.get(this.currentItemID!);
+      if (!item) {
+        this.showToast('无法找到论文');
+        return;
+      }
 
-      // 查找当前论文的 reader
+      let pdfAttachmentID: number | null = null;
+      const attachmentIDs = item.getAttachments();
+      for (const attachmentID of attachmentIDs) {
+        const attachment = Zotero.Items.get(attachmentID);
+        if (attachment && attachment.attachmentContentType === 'application/pdf') {
+          pdfAttachmentID = attachmentID;
+          break;
+        }
+      }
+
+      if (!pdfAttachmentID) {
+        this.showToast('未找到 PDF 附件');
+        return;
+      }
+
+      // 查找当前论文的 reader（通过附件 ID 匹配）
+      const readers = Zotero.Reader._readers || [];
       let currentReader = null;
       for (const reader of readers) {
-        const state = (reader as any)._state;
-        if (state?.itemID === this.currentItemID) {
+        if ((reader as any).itemID === pdfAttachmentID) {
           currentReader = reader;
           break;
         }
       }
 
-      if (currentReader) {
-        // Reader 已打开,直接跳转
-        await currentReader.navigate({ pageIndex: pageNum - 1 });
-        ztoolkit.log(`[ChatPanel] Navigated to page ${pageNum}`);
+      ztoolkit.log(`[ChatPanel] pdfAttachmentID: ${pdfAttachmentID}, found reader: ${!!currentReader}`);
 
-        // 在 PDF 中搜索并高亮文字
-        if (text) {
-          setTimeout(() => {
-            try {
-              const searchText = decodeURIComponent(text).trim();
-              ztoolkit.log(`[ChatPanel] Searching for text: ${searchText}`);
-
-              const ir = (currentReader as any)._internalReader;
-              const pdfView = ir?._primaryView;
-              const app = pdfView?._iframeWindow?.PDFViewerApplication;
-              const eventBus = app?.eventBus;
-
-              if (eventBus) {
-                eventBus.dispatch("find", {
-                  source: null,
-                  type: "",
-                  query: searchText,
-                  phraseSearch: true,
-                  caseSensitive: false,
-                  entireWord: false,
-                  highlightAll: true,
-                  findPrevious: false,
-                  matchDiacritics: false,
-                });
-                ztoolkit.log(`[ChatPanel] Search dispatched via eventBus`);
-              } else {
-                ztoolkit.log(`[ChatPanel] eventBus not available`);
-              }
-            } catch (e) {
-              ztoolkit.log('[ChatPanel] Search failed:', e);
-            }
-          }, 800);
-        }
-      } else {
-        // Reader 未打开,需要先获取 PDF 附件 ID
-        const item = Zotero.Items.get(this.currentItemID!);
-        if (!item) {
-          this.showToast('无法找到论文');
-          return;
-        }
-
-        const attachmentIDs = item.getAttachments();
-        let pdfAttachmentID = null;
-
-        for (const attachmentID of attachmentIDs) {
-          const attachment = Zotero.Items.get(attachmentID);
-          if (attachment && attachment.attachmentContentType === 'application/pdf') {
-            pdfAttachmentID = attachmentID;
+      if (!currentReader) {
+        // Reader 未打开,先打开
+        await Zotero.Reader.open(pdfAttachmentID, { pageIndex: pageNum - 1 });
+        ztoolkit.log(`[ChatPanel] Opened reader at page ${pageNum}`);
+        // 重新查找 reader
+        const updatedReaders = Zotero.Reader._readers || [];
+        for (const reader of updatedReaders) {
+          if ((reader as any).itemID === pdfAttachmentID) {
+            currentReader = reader;
             break;
           }
         }
+      } else {
+        // Reader 已打开,跳转
+        await currentReader.navigate({ pageIndex: pageNum - 1 });
+        ztoolkit.log(`[ChatPanel] Navigated to page ${pageNum}`);
+      }
 
-        if (!pdfAttachmentID) {
-          this.showToast('未找到 PDF 附件');
-          return;
-        }
+      // 搜索并高亮文字
+      if (text && currentReader) {
+        setTimeout(() => {
+          try {
+            const searchText = decodeURIComponent(text).trim();
+            ztoolkit.log(`[ChatPanel] Searching for text: ${searchText}`);
 
-        // 使用 PDF 附件 ID 打开 Reader
-        await Zotero.Reader.open(pdfAttachmentID, { pageIndex: pageNum - 1 });
-        ztoolkit.log(`[ChatPanel] Opened reader and navigated to page ${pageNum}`);
+            const ir = (currentReader as any)._internalReader;
+            if (ir) {
+              // 先打开搜索弹窗
+              ir.toggleFindPopup({ primary: true, open: true });
+
+              // 等待弹窗打开后,设置搜索词并触发搜索
+              setTimeout(() => {
+                try {
+                  // 更新 findState
+                  ir.setFindState({
+                    ...ir._state.primaryViewFindState,
+                    popupOpen: true,
+                    active: true,
+                    query: searchText,
+                    highlightAll: true,
+                    caseSensitive: false,
+                    entireWord: false,
+                  });
+                  ztoolkit.log(`[ChatPanel] setFindState called`);
+                } catch (e1) {
+                  ztoolkit.log(`[ChatPanel] setFindState failed:`, e1);
+                  // 备选方案: 直接修改状态并调用 findNext
+                  try {
+                    ir._state.primaryViewFindState.query = searchText;
+                    ir._state.primaryViewFindState.active = true;
+                    ir._state.primaryViewFindState.highlightAll = true;
+                    ir._updateState();
+                    ir.findNext(true);
+                    ztoolkit.log(`[ChatPanel] Fallback search triggered`);
+                  } catch (e2) {
+                    ztoolkit.log(`[ChatPanel] Fallback also failed:`, e2);
+                  }
+                }
+              }, 300);
+            }
+          } catch (e) {
+            ztoolkit.log('[ChatPanel] Search failed:', e);
+          }
+        }, 1000);
       }
     } catch (error) {
       ztoolkit.log('[ChatPanel] Error navigating to citation:', error);
