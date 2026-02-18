@@ -1,7 +1,7 @@
 import { config } from "../../package.json";
 import { FluentMessageId } from "../../typings/i10n";
 
-export { initLocale, getString, getLocaleID };
+export { initLocale, getString };
 
 /**
  * Initialize locale data
@@ -89,8 +89,4 @@ function _getString(
   } else {
     return pattern.value || localStringWithPrefix;
   }
-}
-
-function getLocaleID(id: FluentMessageId) {
-  return `${config.addonRef}-${id}`;
 }
