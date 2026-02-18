@@ -326,6 +326,16 @@ export class ChatPanel {
       } else {
         contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; user-select: text; cursor: text;";
         contentDiv.innerHTML = MarkdownRenderer.render(content);
+
+        // 添加 PDF 引用链接的点击事件
+        contentDiv.querySelectorAll('.pdf-cite-link').forEach((link: Element) => {
+          link.addEventListener('click', (e: Event) => {
+            e.preventDefault();
+            const pageNum = parseInt((e.target as HTMLElement).dataset.page || '0');
+            const text = (e.target as HTMLElement).dataset.text || '';
+            this.navigateToCitation(pageNum, text);
+          });
+        });
       }
 
       messageEl.appendChild(contentDiv);
@@ -438,7 +448,15 @@ Current paper information:
 - Paper ID: ${this.currentItemID}
 
 Paper full text content:
-${paperContent}`;
+${paperContent}
+
+IMPORTANT: When citing specific content from the paper, use this citation format:
+[quoted text (p.X)](#cite:X:quoted text)
+
+Where X is the page number. The quoted text should be a short excerpt (5-15 words) from the paper.
+Example: [实验准确率达到95% (p.5)](#cite:5:实验准确率达到95%)
+
+Always provide citations when discussing specific findings, methods, or results from the paper.`;
 
     if (enableToolCalling) {
       systemMessage += `\n\nYou have access to the following tools. To use a tool, wrap your call in XML tags like this:
@@ -1123,5 +1141,95 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     });
 
     contentDiv.appendChild(copyBtn);
+  }
+
+  // PDF 引用跳转
+  private async navigateToCitation(pageNum: number, text: string) {
+    try {
+      ztoolkit.log(`[ChatPanel] Navigating to page ${pageNum}, text: ${text}`);
+
+      // 获取所有打开的 reader
+      const readers = Zotero.Reader._readers || [];
+
+      // 查找当前论文的 reader
+      let currentReader = null;
+      for (const reader of readers) {
+        const state = (reader as any)._state;
+        if (state?.itemID === this.currentItemID) {
+          currentReader = reader;
+          break;
+        }
+      }
+
+      if (currentReader) {
+        // Reader 已打开,直接跳转
+        await currentReader.navigate({ pageIndex: pageNum - 1 });
+        ztoolkit.log(`[ChatPanel] Navigated to page ${pageNum}`);
+
+        // 在 PDF 中搜索并高亮文字
+        if (text) {
+          setTimeout(() => {
+            try {
+              const searchText = decodeURIComponent(text).trim();
+              ztoolkit.log(`[ChatPanel] Searching for text: ${searchText}`);
+
+              const ir = (currentReader as any)._internalReader;
+              const pdfView = ir?._primaryView;
+              const app = pdfView?._iframeWindow?.PDFViewerApplication;
+              const eventBus = app?.eventBus;
+
+              if (eventBus) {
+                eventBus.dispatch("find", {
+                  source: null,
+                  type: "",
+                  query: searchText,
+                  phraseSearch: true,
+                  caseSensitive: false,
+                  entireWord: false,
+                  highlightAll: true,
+                  findPrevious: false,
+                  matchDiacritics: false,
+                });
+                ztoolkit.log(`[ChatPanel] Search dispatched via eventBus`);
+              } else {
+                ztoolkit.log(`[ChatPanel] eventBus not available`);
+              }
+            } catch (e) {
+              ztoolkit.log('[ChatPanel] Search failed:', e);
+            }
+          }, 800);
+        }
+      } else {
+        // Reader 未打开,需要先获取 PDF 附件 ID
+        const item = Zotero.Items.get(this.currentItemID!);
+        if (!item) {
+          this.showToast('无法找到论文');
+          return;
+        }
+
+        const attachmentIDs = item.getAttachments();
+        let pdfAttachmentID = null;
+
+        for (const attachmentID of attachmentIDs) {
+          const attachment = Zotero.Items.get(attachmentID);
+          if (attachment && attachment.attachmentContentType === 'application/pdf') {
+            pdfAttachmentID = attachmentID;
+            break;
+          }
+        }
+
+        if (!pdfAttachmentID) {
+          this.showToast('未找到 PDF 附件');
+          return;
+        }
+
+        // 使用 PDF 附件 ID 打开 Reader
+        await Zotero.Reader.open(pdfAttachmentID, { pageIndex: pageNum - 1 });
+        ztoolkit.log(`[ChatPanel] Opened reader and navigated to page ${pageNum}`);
+      }
+    } catch (error) {
+      ztoolkit.log('[ChatPanel] Error navigating to citation:', error);
+      this.showToast('无法跳转到引用位置');
+    }
   }
 }
