@@ -213,7 +213,6 @@ export class ChatPanel {
     input.style.height = "auto";
     this.removeWelcomePage();
     this.addMessage("user", message);
-    this.addMessage("assistant", ""); // 创建空的 assistant 消息用于流式更新
     this.showLoading();
 
     try {
@@ -481,12 +480,19 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
 
   private updateLastMessage(content: string) {
     const messagesDiv = this.container?.querySelector("#marginalia-messages");
-    const messages = messagesDiv?.querySelectorAll(".marginalia-message.assistant");
-    if (messages && messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      const contentDiv = lastMessage.querySelector(".marginalia-message-content");
-      if (contentDiv) {
-        contentDiv.innerHTML = MarkdownRenderer.render(content);
+    const loading = messagesDiv?.querySelector("#marginalia-loading");
+
+    if (loading) {
+      loading.remove();
+      this.addMessage("assistant", content);
+    } else {
+      const messages = messagesDiv?.querySelectorAll(".marginalia-message.assistant");
+      if (messages && messages.length > 0) {
+        const lastMessage = messages[messages.length - 1];
+        const contentDiv = lastMessage.querySelector(".marginalia-message-content");
+        if (contentDiv) {
+          contentDiv.innerHTML = MarkdownRenderer.render(content);
+        }
       }
     }
   }
