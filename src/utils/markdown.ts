@@ -10,11 +10,11 @@ export class MarkdownRenderer {
 
   static render(content: string): string {
     try {
-      // 预处理 PDF 引用链接,转换为 HTML 标签避免 marked 处理
+      // 预处理 PDF 引用链接,在引用后添加可点击的页码标记
       // 匹配格式: [文字 (p.X)](#cite:X:引用文字)
       content = content.replace(
-        /\[([^\]]+)\]\(#cite:(\d+):([^)]+)\)/g,
-        '<a href="#" class="pdf-cite-link" data-page="$2" data-text="$3" style="color: #D4AF37; text-decoration: none; border-bottom: 1px dashed #D4AF37; cursor: pointer;">$1</a>'
+        /\[([^\]]+?)\s*\(p\.(\d+)\)\]\(#cite:(\d+):([^)]+)\)/g,
+        '$1 <span class="pdf-cite-link" data-page="$3" data-text="$4" style="display: inline; color: #D4AF37; cursor: pointer; font-size: 0.85em; font-weight: 500;">[p.$2]</span>'
       );
 
       let html = marked(content) as string;
