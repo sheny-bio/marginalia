@@ -123,7 +123,7 @@ export class ChatPanel {
           const sendBtn = doc.createElement("button");
           sendBtn.id = "marginalia-send";
           sendBtn.textContent = "Send";
-          sendBtn.style.cssText = "padding: 8px 16px; background: #171717; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; flex-shrink: 0;";
+          sendBtn.style.cssText = "display: flex; align-items: center; justify-content: center; padding: 8px 16px; background: #171717; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; flex-shrink: 0;";
           sendBtn.addEventListener("mouseenter", () => {
             sendBtn.style.background = "#404040";
           });
@@ -135,7 +135,7 @@ export class ChatPanel {
           const optionsBtn = doc.createElement("button");
           optionsBtn.id = "marginalia-options";
           optionsBtn.textContent = "+";
-          optionsBtn.style.cssText = "padding: 8px 12px; background: #f5f5f5; color: #171717; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 14px; flex-shrink: 0;";
+          optionsBtn.style.cssText = "display: flex; align-items: center; justify-content: center; padding: 8px 12px; background: #f5f5f5; color: #171717; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 14px; flex-shrink: 0;";
           optionsBtn.addEventListener("mouseenter", () => {
             optionsBtn.style.background = "#e5e5e5";
           });
