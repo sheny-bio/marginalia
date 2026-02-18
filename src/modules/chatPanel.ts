@@ -62,7 +62,6 @@ export class ChatPanel {
             flex-direction: column;
             flex: 1;
             height: 100%;
-            min-height: 700px;
             overflow: hidden;
             background: #FAFAFA;
           `;
