@@ -850,7 +850,7 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0,0,0,0.4);
+      background: rgba(0,0,0,0.5);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -861,7 +861,7 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     dialog.className = "marginalia-dialog";
     dialog.style.cssText = `
       background: #fff;
-      border-radius: 16px;
+      border-radius: 12px;
       padding: 24px;
       max-width: 320px;
       width: 90%;
@@ -877,15 +877,29 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     messageDiv.textContent = getString("chat-dialog-clear-message");
 
     const buttonsDiv = doc.createElement("div");
-    buttonsDiv.style.cssText = "display: flex; gap: 12px; justify-content: flex-end;";
+    buttonsDiv.style.cssText = "display: flex; gap: 12px;";
 
     const cancelBtn = doc.createElement("button");
-    cancelBtn.style.cssText = "padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #F5F5F5; color: #171717; border: none; font-family: inherit;";
+    cancelBtn.style.cssText = "flex: 1; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #F5F5F5; color: #171717; border: none; font-family: inherit; transition: background 150ms; display: flex; align-items: center; justify-content: center;";
     cancelBtn.textContent = getString("chat-dialog-cancel");
 
     const confirmBtn = doc.createElement("button");
-    confirmBtn.style.cssText = "padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #DC2626; color: #fff; border: none; font-family: inherit;";
+    confirmBtn.style.cssText = "flex: 1; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #DC2626; color: #fff; border: none; font-family: inherit; transition: background 150ms; display: flex; align-items: center; justify-content: center;";
     confirmBtn.textContent = getString("chat-dialog-confirm");
+
+    cancelBtn.addEventListener("mouseenter", () => {
+      cancelBtn.style.background = "#E5E5E5";
+    });
+    cancelBtn.addEventListener("mouseleave", () => {
+      cancelBtn.style.background = "#F5F5F5";
+    });
+
+    confirmBtn.addEventListener("mouseenter", () => {
+      confirmBtn.style.background = "#B91C1C";
+    });
+    confirmBtn.addEventListener("mouseleave", () => {
+      confirmBtn.style.background = "#DC2626";
+    });
 
     buttonsDiv.appendChild(cancelBtn);
     buttonsDiv.appendChild(confirmBtn);
@@ -894,6 +908,11 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     dialog.appendChild(buttonsDiv);
     overlay.appendChild(dialog);
     this.container?.appendChild(overlay);
+
+    setTimeout(() => {
+      overlay.style.opacity = "1";
+      dialog.style.transform = "scale(1)";
+    }, 10);
 
     cancelBtn.addEventListener("click", () => {
       ztoolkit.log("[Dialog] Cancel button clicked");
