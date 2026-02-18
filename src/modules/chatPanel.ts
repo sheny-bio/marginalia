@@ -75,7 +75,10 @@ export class ChatPanel {
           // 创建输入区域
           const inputArea = doc.createElement("div");
           inputArea.className = "marginalia-input-area";
-          inputArea.style.cssText = "flex-shrink: 0; padding: 12px; background: #fff; border-top: 1px solid #e5e5e5; display: flex; gap: 8px; align-items: flex-end;";
+
+          // 创建输入容器
+          const inputContainer = doc.createElement("div");
+          inputContainer.className = "marginalia-input-container";
 
           // 创建输入框
           const textarea = doc.createElement("textarea") as HTMLTextAreaElement;
@@ -83,23 +86,6 @@ export class ChatPanel {
           textarea.className = "marginalia-input";
           textarea.placeholder = "Ask about this paper...";
           textarea.rows = 1;
-          textarea.style.cssText = `
-            flex: 1;
-            min-width: 0;
-            padding: 12px 16px;
-            background: #F5F5F5;
-            border: 1px solid #E5E5E5;
-            border-radius: 12px;
-            font-size: 14px;
-            font-family: inherit;
-            color: #171717;
-            resize: none;
-            min-height: 44px;
-            max-height: 120px;
-            line-height: 1.5;
-            overflow-y: auto;
-            transition: border-color 0.2s, box-shadow 0.2s;
-          `;
           this.inputElement = textarea;
 
           // 输入框自适应高度
@@ -109,34 +95,38 @@ export class ChatPanel {
             textarea.style.height = `${scrollHeight}px`;
           });
 
-          // 输入框焦点样式
-          textarea.addEventListener("focus", () => {
-            textarea.style.borderColor = "#D4AF37";
-            textarea.style.boxShadow = "0 0 0 3px rgba(212, 175, 55, 0.15)";
-          });
-          textarea.addEventListener("blur", () => {
-            textarea.style.borderColor = "#E5E5E5";
-            textarea.style.boxShadow = "none";
-          });
+          // 创建按钮容器
+          const actionsDiv = doc.createElement("div");
+          actionsDiv.className = "marginalia-input-actions";
 
-          // 创建发送按钮
-          const sendBtn = doc.createElement("button");
-          sendBtn.id = "marginalia-send";
-          sendBtn.className = "marginalia-button";
-          sendBtn.textContent = "Send";
-          sendBtn.style.cssText = "padding: 10px 16px; background: #171717; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;";
-
-          // 创建选项按钮包装器（用于下拉菜单定位）
+          // 创建选项按钮包装器
           const optionsWrapper = doc.createElement("div");
           optionsWrapper.className = "marginalia-options-wrapper";
           optionsWrapper.style.cssText = "position: relative;";
 
+          // 创建发送按钮
+          const sendBtn = doc.createElement("button");
+          sendBtn.id = "marginalia-send";
+          sendBtn.textContent = "Send";
+          sendBtn.style.cssText = "padding: 8px 16px; background: #171717; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; flex-shrink: 0;";
+          sendBtn.addEventListener("mouseenter", () => {
+            sendBtn.style.background = "#404040";
+          });
+          sendBtn.addEventListener("mouseleave", () => {
+            sendBtn.style.background = "#171717";
+          });
+
           // 创建选项按钮
           const optionsBtn = doc.createElement("button");
           optionsBtn.id = "marginalia-options";
-          optionsBtn.className = "marginalia-button marginalia-button-options";
           optionsBtn.textContent = "+";
-          optionsBtn.style.cssText = "padding: 10px 12px; background: #f5f5f5; color: #171717; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 14px;";
+          optionsBtn.style.cssText = "padding: 8px 12px; background: #f5f5f5; color: #171717; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 14px; flex-shrink: 0;";
+          optionsBtn.addEventListener("mouseenter", () => {
+            optionsBtn.style.background = "#e5e5e5";
+          });
+          optionsBtn.addEventListener("mouseleave", () => {
+            optionsBtn.style.background = "#f5f5f5";
+          });
 
           // 创建下拉菜单
           const dropdown = this.createDropdownMenu(doc);
@@ -168,9 +158,11 @@ export class ChatPanel {
           });
 
           // 组装 DOM
-          inputArea.appendChild(textarea);
-          inputArea.appendChild(sendBtn);
-          inputArea.appendChild(optionsWrapper);
+          actionsDiv.appendChild(optionsWrapper);
+          actionsDiv.appendChild(sendBtn);
+          inputContainer.appendChild(textarea);
+          inputContainer.appendChild(actionsDiv);
+          inputArea.appendChild(inputContainer);
           container.appendChild(messagesDiv);
           container.appendChild(inputArea);
 

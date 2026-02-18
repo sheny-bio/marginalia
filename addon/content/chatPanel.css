@@ -65,62 +65,113 @@
   padding: 16px;
   background: #FFFFFF;
   border-top: 1px solid #E5E5E5;
+}
+
+.marginalia-input-container {
   display: flex;
   align-items: flex-end;
-  gap: 12px;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #FFFFFF;
+  border: 1px solid #E5E5E5;
+  border-radius: 24px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.marginalia-input-container:focus-within {
+  border-color: #D4AF37;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
 }
 
 .marginalia-input {
   flex: 1;
   min-width: 0;
-  padding: 12px 16px;
-  background: #F5F5F5;
-  border: 1px solid #E5E5E5;
-  border-radius: 12px;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
   font-size: 14px;
   font-family: inherit;
   color: #171717;
   resize: none;
   max-height: 120px;
   line-height: 1.5;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.marginalia-input:focus {
   outline: none;
-  border-color: #D4AF37;
-  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
 }
 
 .marginalia-input::placeholder {
   color: #9CA3AF;
 }
 
-/* Buttons */
-.marginalia-button {
+.marginalia-input-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   flex-shrink: 0;
-  padding: 12px 20px;
-  background: #171717;
-  color: #FFFFFF;
-  border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
-  white-space: nowrap;
 }
 
-.marginalia-button:hover {
+/* Icon Buttons */
+.marginalia-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  flex-shrink: 0;
+}
+
+.marginalia-icon-button svg {
+  color: #6B7280;
+  fill: #6B7280;
+}
+
+.marginalia-icon-button:hover {
+  background: #F5F5F5;
+}
+
+.marginalia-icon-button:hover svg {
+  color: #171717;
+  fill: #171717;
+}
+
+.marginalia-icon-button:active {
+  background: #E5E5E5;
+}
+
+.marginalia-send-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: #171717;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+.marginalia-send-button svg {
+  color: #FFFFFF;
+  stroke: #FFFFFF;
+}
+
+.marginalia-send-button:hover {
   background: #404040;
 }
 
-.marginalia-button:active {
-  transform: scale(0.98);
+.marginalia-send-button:active {
+  transform: scale(0.95);
 }
 
-.marginalia-button:disabled {
+.marginalia-send-button:disabled {
   background: #D1D5DB;
   cursor: not-allowed;
   transform: none;
