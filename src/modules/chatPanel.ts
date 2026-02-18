@@ -4,6 +4,7 @@ import { SettingsManager } from "./settingsManager";
 import { ZoteroAPI } from "./zoteroAPI";
 import { MarkdownRenderer } from "../utils/markdown";
 import { ToolCaller, ToolCall, AVAILABLE_TOOLS } from "./toolCaller";
+import { getString } from "../utils/locale";
 
 interface StoredMessage {
   role: "user" | "assistant" | "system";
@@ -33,11 +34,11 @@ export class ChatPanel {
       paneID: "marginalia-chat",
       pluginID: addon.data.config.addonID,
       header: {
-        l10nID: "marginalia-chat-header",
+        l10nID: `${addon.data.config.addonRef}-chat-header`,
         icon: `chrome://${addon.data.config.addonRef}/content/icons/favicon.svg`,
       },
       sidenav: {
-        l10nID: "marginalia-chat-sidenav",
+        l10nID: `${addon.data.config.addonRef}-chat-sidenav`,
         icon: `chrome://${addon.data.config.addonRef}/content/icons/favicon.svg`,
       },
       onRender: ({ body, item }) => {
@@ -86,7 +87,7 @@ export class ChatPanel {
           const textarea = doc.createElement("textarea") as HTMLTextAreaElement;
           textarea.id = "marginalia-input";
           textarea.className = "marginalia-input";
-          textarea.placeholder = "Ask about this paper...";
+          textarea.placeholder = getString("chat-input-placeholder");
           textarea.rows = 1;
           textarea.style.cssText = "flex: 1; min-width: 0; padding: 6px 8px; background: transparent; border: none; font-size: 14px; font-family: inherit; color: #171717; resize: none; max-height: 120px; line-height: 1.5; outline: none;";
           this.inputElement = textarea;
@@ -121,7 +122,7 @@ export class ChatPanel {
           // 创建发送按钮
           const sendBtn = doc.createElement("button");
           sendBtn.id = "marginalia-send";
-          sendBtn.textContent = "Send";
+          sendBtn.textContent = getString("chat-send-button");
           sendBtn.style.cssText = "display: flex; align-items: center; justify-content: center; padding: 8px 16px; background: #171717; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; flex-shrink: 0;";
           sendBtn.addEventListener("mouseenter", () => {
             sendBtn.style.background = "#404040";
@@ -268,7 +269,7 @@ export class ChatPanel {
     errorEl.innerHTML = `
       <span style="flex-shrink: 0;">⚠️</span>
       <div>
-        <div style="font-weight: 500; margin-bottom: 4px;">Something went wrong</div>
+        <div style="font-weight: 500; margin-bottom: 4px;">${getString("chat-error-title")}</div>
         <div style="color: #991B1B; font-size: 12px;">${this.escapeHtml(errorMessage)}</div>
       </div>
     `;
@@ -370,7 +371,7 @@ export class ChatPanel {
         border-radius: 50%;
         animation: marginalia-spin 0.8s linear infinite;
       "></div>
-      <span style="color: #6B7280;">Thinking...</span>
+      <span style="color: #6B7280;">${getString("chat-thinking")}</span>
     `;
 
     messageEl.appendChild(contentDiv);
@@ -568,10 +569,10 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
         <span style="font-size: 24px; color: #fff; font-weight: 700;">M</span>
       </div>
       <div style="font-size: 16px; font-weight: 600; color: #171717; margin-bottom: 6px;">
-        Marginalia
+        ${getString("chat-welcome-title")}
       </div>
       <div style="font-size: 13px; color: #9CA3AF; margin-bottom: ${truncatedTitle ? "8px" : "24px"}; line-height: 1.4;">
-        Your AI research assistant
+        ${getString("chat-welcome-subtitle")}
       </div>
       ${truncatedTitle ? `<div style="font-size: 12px; color: #6B7280; margin-bottom: 24px; padding: 6px 12px; background: #F5F5F5; border-radius: 6px; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeHtml(truncatedTitle)}</div>` : ""}
       <div id="marginalia-welcome-suggestions" style="display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 280px;"></div>
@@ -581,10 +582,10 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
 
     // 添加快捷提问按钮
     const suggestions = [
-      "Summarize this paper",
-      "What are the key contributions?",
-      "Explain the methodology",
-      "What are the limitations?",
+      getString("chat-suggestion-summarize"),
+      getString("chat-suggestion-contributions"),
+      getString("chat-suggestion-methodology"),
+      getString("chat-suggestion-limitations"),
     ];
 
     const suggestionsContainer = welcome.querySelector("#marginalia-welcome-suggestions");
@@ -702,10 +703,10 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     `;
 
     const menuItems = [
-      { id: "export-md", icon: "📄", label: "Export as Markdown", action: () => this.exportAsMarkdown() },
-      { id: "copy-all", icon: "📋", label: "Copy All Messages", action: () => this.copyAllMessages() },
+      { id: "export-md", icon: "📄", label: getString("chat-menu-export"), action: () => this.exportAsMarkdown() },
+      { id: "copy-all", icon: "📋", label: getString("chat-menu-copy-all"), action: () => this.copyAllMessages() },
       { id: "divider", type: "divider" },
-      { id: "clear-history", icon: "🗑️", label: "Clear History", danger: true, action: () => this.showClearConfirmDialog() },
+      { id: "clear-history", icon: "🗑️", label: getString("chat-menu-clear"), danger: true, action: () => this.showClearConfirmDialog() },
     ];
 
     for (const item of menuItems) {
@@ -779,7 +780,7 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
   private async copyAllMessages() {
     const markdown = this.generateMarkdownContent();
     await this.copyToClipboard(markdown);
-    this.showToast("All messages copied!");
+    this.showToast(getString("chat-toast-copied"));
   }
 
   private async exportAsMarkdown() {
@@ -799,11 +800,11 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
 
       if (path) {
         await Zotero.File.putContentsAsync(path, markdown);
-        this.showToast("Exported successfully!");
+        this.showToast(getString("chat-toast-exported"));
       }
     } catch (error) {
       ztoolkit.log("Error exporting markdown:", error);
-      this.showToast("Export failed!");
+      this.showToast(getString("chat-toast-export-failed"));
     }
   }
 
@@ -863,13 +864,13 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     `;
 
     dialog.innerHTML = `
-      <div style="font-size: 16px; font-weight: 600; color: #171717; margin-bottom: 8px;">Clear Chat History?</div>
+      <div style="font-size: 16px; font-weight: 600; color: #171717; margin-bottom: 8px;">${getString("chat-dialog-clear-title")}</div>
       <div style="font-size: 14px; color: #6B7280; margin-bottom: 20px; line-height: 1.5;">
-        This will permanently delete all messages for this paper. This action cannot be undone.
+        ${getString("chat-dialog-clear-message")}
       </div>
       <div style="display: flex; gap: 12px; justify-content: flex-end;">
-        <button id="marginalia-cancel-btn" style="padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #F5F5F5; color: #171717; border: none; font-family: inherit;">Cancel</button>
-        <button id="marginalia-confirm-btn" style="padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #DC2626; color: #fff; border: none; font-family: inherit;">Clear</button>
+        <button id="marginalia-cancel-btn" style="padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #F5F5F5; color: #171717; border: none; font-family: inherit;">${getString("chat-dialog-cancel")}</button>
+        <button id="marginalia-confirm-btn" style="padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #DC2626; color: #fff; border: none; font-family: inherit;">${getString("chat-dialog-confirm")}</button>
       </div>
     `;
 
@@ -907,7 +908,7 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     }
 
     this.showWelcomePage();
-    this.showToast("History cleared!");
+    this.showToast(getString("chat-toast-cleared"));
   }
 
   private async copyToClipboard(text: string) {
@@ -1045,7 +1046,7 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
 
     const copyBtn = doc.createElement("button");
     copyBtn.className = "marginalia-copy-btn";
-    copyBtn.textContent = "Copy";
+    copyBtn.textContent = getString("chat-copy-button");
     copyBtn.style.cssText = `
       position: absolute;
       top: 8px;
@@ -1072,12 +1073,12 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
       e.stopPropagation();
       const currentContent = contentDiv.textContent || "";
       await this.copyToClipboard(currentContent);
-      copyBtn.textContent = "Copied!";
+      copyBtn.textContent = getString("chat-copied-button");
       copyBtn.style.background = "#D4AF37";
       copyBtn.style.color = "#fff";
       copyBtn.style.borderColor = "#D4AF37";
       setTimeout(() => {
-        copyBtn.textContent = "Copy";
+        copyBtn.textContent = getString("chat-copy-button");
         copyBtn.style.background = "rgba(255,255,255,0.9)";
         copyBtn.style.color = "#6B7280";
         copyBtn.style.borderColor = "#e5e5e5";
