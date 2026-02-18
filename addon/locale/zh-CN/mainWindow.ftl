@@ -1,4 +1,4 @@
 marginalia-chat-header =
-    .label = AI 聊天
+    .label = Marginalia
 marginalia-chat-sidenav =
-    .tooltiptext = AI 聊天
+    .tooltiptext = Marginalia
