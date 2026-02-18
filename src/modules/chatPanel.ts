@@ -289,7 +289,7 @@ export class ChatPanel {
     if (toolCall && toolResult !== undefined) {
       // 工具调用显示为可折叠卡片
       messageEl.className = "marginalia-tool-call";
-      messageEl.style.cssText = "background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; margin: 8px 0; overflow: hidden;";
+      messageEl.style.cssText = "background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; overflow: hidden;";
 
       const header = doc.createElement("div");
       header.className = "marginalia-tool-call-header";
