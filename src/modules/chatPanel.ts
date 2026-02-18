@@ -877,14 +877,14 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     messageDiv.textContent = getString("chat-dialog-clear-message");
 
     const buttonsDiv = doc.createElement("div");
-    buttonsDiv.style.cssText = "display: flex; gap: 12px;";
+    buttonsDiv.style.cssText = "display: flex; gap: 12px; justify-content: flex-end;";
 
     const cancelBtn = doc.createElement("button");
-    cancelBtn.style.cssText = "flex: 1; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #F5F5F5; color: #171717; border: none; font-family: inherit; transition: background 150ms; display: flex; align-items: center; justify-content: center;";
+    cancelBtn.style.cssText = "padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #F5F5F5; color: #171717; border: none; font-family: inherit; transition: background 150ms; display: flex; align-items: center; justify-content: center;";
     cancelBtn.textContent = getString("chat-dialog-cancel");
 
     const confirmBtn = doc.createElement("button");
-    confirmBtn.style.cssText = "flex: 1; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #DC2626; color: #fff; border: none; font-family: inherit; transition: background 150ms; display: flex; align-items: center; justify-content: center;";
+    confirmBtn.style.cssText = "padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #DC2626; color: #fff; border: none; font-family: inherit; transition: background 150ms; display: flex; align-items: center; justify-content: center;";
     confirmBtn.textContent = getString("chat-dialog-confirm");
 
     cancelBtn.addEventListener("mouseenter", () => {
