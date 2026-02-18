@@ -594,6 +594,9 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
         const btn = doc.createElement("button");
         btn.textContent = text;
         btn.style.cssText = `
+          display: flex;
+          align-items: center;
+          justify-content: center;
           padding: 10px 16px;
           background: #FFFFFF;
           border: 1px solid #E5E5E5;
@@ -602,7 +605,6 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
           color: #171717;
           cursor: pointer;
           font-family: inherit;
-          text-align: center;
           transition: background-color 0.15s, border-color 0.15s;
         `;
         btn.addEventListener("mouseenter", () => {
