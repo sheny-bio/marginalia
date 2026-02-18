@@ -48,7 +48,6 @@ export class ChatPanel {
           flex-direction: column;
           overflow: hidden;
           height: 100%;
-          min-height: 400px;
         `;
 
         if (!body.querySelector("#marginalia-container")) {
