@@ -834,8 +834,13 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
   }
 
   private showClearConfirmDialog() {
+    ztoolkit.log("[Dialog] showClearConfirmDialog called");
     const doc = this.container?.ownerDocument;
-    if (!doc) return;
+    if (!doc) {
+      ztoolkit.log("[Dialog] No document found");
+      return;
+    }
+    ztoolkit.log("[Dialog] Creating dialog");
 
     const overlay = doc.createElement("div");
     overlay.className = "marginalia-dialog-overlay";
@@ -863,28 +868,40 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
       box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     `;
 
-    dialog.innerHTML = `
-      <div style="font-size: 16px; font-weight: 600; color: #171717; margin-bottom: 8px;">${getString("chat-dialog-clear-title")}</div>
-      <div style="font-size: 14px; color: #6B7280; margin-bottom: 20px; line-height: 1.5;">
-        ${getString("chat-dialog-clear-message")}
-      </div>
-      <div style="display: flex; gap: 12px; justify-content: flex-end;">
-        <button id="marginalia-cancel-btn" style="padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #F5F5F5; color: #171717; border: none; font-family: inherit;">${getString("chat-dialog-cancel")}</button>
-        <button id="marginalia-confirm-btn" style="padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #DC2626; color: #fff; border: none; font-family: inherit;">${getString("chat-dialog-confirm")}</button>
-      </div>
-    `;
+    const titleDiv = doc.createElement("div");
+    titleDiv.style.cssText = "font-size: 16px; font-weight: 600; color: #171717; margin-bottom: 8px;";
+    titleDiv.textContent = getString("chat-dialog-clear-title");
 
+    const messageDiv = doc.createElement("div");
+    messageDiv.style.cssText = "font-size: 14px; color: #6B7280; margin-bottom: 20px; line-height: 1.5;";
+    messageDiv.textContent = getString("chat-dialog-clear-message");
+
+    const buttonsDiv = doc.createElement("div");
+    buttonsDiv.style.cssText = "display: flex; gap: 12px; justify-content: flex-end;";
+
+    const cancelBtn = doc.createElement("button");
+    cancelBtn.style.cssText = "padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #F5F5F5; color: #171717; border: none; font-family: inherit;";
+    cancelBtn.textContent = getString("chat-dialog-cancel");
+
+    const confirmBtn = doc.createElement("button");
+    confirmBtn.style.cssText = "padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #DC2626; color: #fff; border: none; font-family: inherit;";
+    confirmBtn.textContent = getString("chat-dialog-confirm");
+
+    buttonsDiv.appendChild(cancelBtn);
+    buttonsDiv.appendChild(confirmBtn);
+    dialog.appendChild(titleDiv);
+    dialog.appendChild(messageDiv);
+    dialog.appendChild(buttonsDiv);
     overlay.appendChild(dialog);
-    doc.body?.appendChild(overlay);
+    this.container?.appendChild(overlay);
 
-    const cancelBtn = dialog.querySelector("#marginalia-cancel-btn");
-    const confirmBtn = dialog.querySelector("#marginalia-confirm-btn");
-
-    cancelBtn?.addEventListener("click", () => {
+    cancelBtn.addEventListener("click", () => {
+      ztoolkit.log("[Dialog] Cancel button clicked");
       overlay.remove();
     });
 
-    confirmBtn?.addEventListener("click", async () => {
+    confirmBtn.addEventListener("click", async () => {
+      ztoolkit.log("[Dialog] Confirm button clicked");
       await this.clearHistory();
       overlay.remove();
     });
@@ -894,11 +911,18 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
         overlay.remove();
       }
     });
+
+    ztoolkit.log("[Dialog] Dialog created and appended to body");
   }
 
   private async clearHistory() {
-    if (!this.currentItemID) return;
+    ztoolkit.log("[clearHistory] Starting clear history");
+    if (!this.currentItemID) {
+      ztoolkit.log("[clearHistory] No currentItemID, returning");
+      return;
+    }
 
+    ztoolkit.log("[clearHistory] Clearing messages for itemID:", this.currentItemID);
     await this.storageManager.clearMessages(this.currentItemID);
     this.messages = [];
 
@@ -909,6 +933,7 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
 
     this.showWelcomePage();
     this.showToast(getString("chat-toast-cleared"));
+    ztoolkit.log("[clearHistory] Clear history completed");
   }
 
   private async copyToClipboard(text: string) {
