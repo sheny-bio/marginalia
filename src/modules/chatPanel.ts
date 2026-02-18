@@ -64,6 +64,7 @@ export class ChatPanel {
             height: 100%;
             min-height: 700px;
             overflow: hidden;
+            background: #FAFAFA;
           `;
 
           // 创建消息区域
@@ -75,10 +76,12 @@ export class ChatPanel {
           // 创建输入区域
           const inputArea = doc.createElement("div");
           inputArea.className = "marginalia-input-area";
+          inputArea.style.cssText = "flex-shrink: 0; padding: 16px; background: #fff; border-top: 1px solid #e5e5e5;";
 
           // 创建输入容器
           const inputContainer = doc.createElement("div");
           inputContainer.className = "marginalia-input-container";
+          inputContainer.style.cssText = "display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #fff; border: 1px solid #e5e5e5; border-radius: 24px; transition: border-color 0.2s, box-shadow 0.2s;";
 
           // 创建输入框
           const textarea = doc.createElement("textarea") as HTMLTextAreaElement;
@@ -86,6 +89,7 @@ export class ChatPanel {
           textarea.className = "marginalia-input";
           textarea.placeholder = "Ask about this paper...";
           textarea.rows = 1;
+          textarea.style.cssText = "flex: 1; min-width: 0; padding: 6px 8px; background: transparent; border: none; font-size: 14px; font-family: inherit; color: #171717; resize: none; max-height: 120px; line-height: 1.5; outline: none;";
           this.inputElement = textarea;
 
           // 输入框自适应高度
@@ -95,9 +99,20 @@ export class ChatPanel {
             textarea.style.height = `${scrollHeight}px`;
           });
 
+          // 容器聚焦效果
+          textarea.addEventListener("focus", () => {
+            inputContainer.style.borderColor = "#D4AF37";
+            inputContainer.style.boxShadow = "0 0 0 3px rgba(212, 175, 55, 0.1)";
+          });
+          textarea.addEventListener("blur", () => {
+            inputContainer.style.borderColor = "#e5e5e5";
+            inputContainer.style.boxShadow = "none";
+          });
+
           // 创建按钮容器
           const actionsDiv = doc.createElement("div");
           actionsDiv.className = "marginalia-input-actions";
+          actionsDiv.style.cssText = "display: flex; align-items: center; gap: 4px; flex-shrink: 0;";
 
           // 创建选项按钮包装器
           const optionsWrapper = doc.createElement("div");
@@ -587,7 +602,7 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
           color: #171717;
           cursor: pointer;
           font-family: inherit;
-          text-align: left;
+          text-align: center;
           transition: background-color 0.15s, border-color 0.15s;
         `;
         btn.addEventListener("mouseenter", () => {
