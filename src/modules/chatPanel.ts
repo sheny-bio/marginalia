@@ -346,18 +346,16 @@ export class ChatPanel {
     const messagesDiv = this.container?.querySelector("#marginalia-messages");
     const doc = this.container?.ownerDocument;
     if (!doc || !messagesDiv) return;
-    const loadingEl = doc.createElement("div");
-    loadingEl.className = "marginalia-loading";
-    loadingEl.id = "marginalia-loading";
-    loadingEl.style.cssText = `
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 16px;
-      color: #6B7280;
-      font-size: 13px;
-    `;
-    loadingEl.innerHTML = `
+
+    const messageEl = doc.createElement("div");
+    messageEl.className = "marginalia-message assistant";
+    messageEl.id = "marginalia-loading";
+    messageEl.style.cssText = "display: flex; justify-content: flex-start;";
+
+    const contentDiv = doc.createElement("div");
+    contentDiv.className = "marginalia-message-content";
+    contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; display: flex; align-items: center; gap: 10px;";
+    contentDiv.innerHTML = `
       <div class="marginalia-spinner" style="
         width: 18px;
         height: 18px;
@@ -366,8 +364,10 @@ export class ChatPanel {
         border-radius: 50%;
         animation: marginalia-spin 0.8s linear infinite;
       "></div>
-      <span>Thinking...</span>
+      <span style="color: #6B7280;">Thinking...</span>
     `;
+
+    messageEl.appendChild(contentDiv);
 
     // 添加动画样式
     if (!doc.querySelector("#marginalia-spinner-style")) {
@@ -381,7 +381,7 @@ export class ChatPanel {
       doc.head?.appendChild(style);
     }
 
-    messagesDiv.appendChild(loadingEl);
+    messagesDiv.appendChild(messageEl);
     this.scrollToBottom();
   }
 
@@ -483,8 +483,12 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     const loading = messagesDiv?.querySelector("#marginalia-loading");
 
     if (loading) {
-      loading.remove();
-      this.addMessage("assistant", content);
+      loading.removeAttribute("id");
+      const contentDiv = loading.querySelector(".marginalia-message-content") as HTMLElement;
+      if (contentDiv) {
+        contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; user-select: text; cursor: text;";
+        contentDiv.innerHTML = MarkdownRenderer.render(content);
+      }
     } else {
       const messages = messagesDiv?.querySelectorAll(".marginalia-message.assistant");
       if (messages && messages.length > 0) {
