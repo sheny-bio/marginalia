@@ -4,7 +4,7 @@ export class StorageManager {
   async init() {
     ztoolkit.log("[StorageManager] Initializing...");
     // 使用 Zotero 数据目录下的 marginalia 文件夹
-    this.dataDir = Zotero.DataDirectory.dir + "/marginalia";
+    this.dataDir = PathUtils.join(Zotero.DataDirectory.dir, "marginalia");
     ztoolkit.log("[StorageManager] Data directory:", this.dataDir);
 
     // 确保目录存在
@@ -16,11 +16,11 @@ export class StorageManager {
   }
 
   private getConversationFilePath(itemID: number): string {
-    return this.dataDir + `/conversation_${itemID}.json`;
+    return PathUtils.join(this.dataDir, `conversation_${itemID}.json`);
   }
 
   private getSettingsFilePath(): string {
-    return this.dataDir + "/settings.json";
+    return PathUtils.join(this.dataDir, "settings.json");
   }
 
   async saveMessage(itemID: number, role: string, content: string, toolCalls?: any) {
