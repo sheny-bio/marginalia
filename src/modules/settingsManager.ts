@@ -59,13 +59,4 @@ export class SettingsManager {
   async setSystemPrompt(prompt: string) {
     this.setPref("systemPrompt", prompt);
   }
-
-  async isToolCallingEnabled(): Promise<boolean> {
-    const value = this.getPref("enableToolCalling");
-    return value === "true";
-  }
-
-  async setToolCallingEnabled(enabled: boolean) {
-    this.setPref("enableToolCalling", enabled.toString());
-  }
 }

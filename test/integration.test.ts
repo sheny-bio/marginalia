@@ -48,55 +48,5 @@ describe("Integration Tests", function () {
       assert.isString(prompt);
       assert.isNotEmpty(prompt);
     });
-
-    it("should be able to check tool calling status", async function () {
-      const addon = Zotero[config.addonInstance];
-      const settingsManager = addon.data.settingsManager;
-
-      const enabled = await settingsManager.isToolCallingEnabled();
-      assert.isBoolean(enabled);
-    });
-  });
-
-  describe("Tool Calling Flow", function () {
-    it("should have available tools defined", function () {
-      // Import dynamically to avoid module resolution issues
-      const { AVAILABLE_TOOLS } = require("../src/modules/toolCaller");
-
-      assert.isArray(AVAILABLE_TOOLS);
-      assert.isAtLeast(AVAILABLE_TOOLS.length, 3);
-
-      // Check tool structure
-      for (const tool of AVAILABLE_TOOLS) {
-        assert.isDefined(tool.name);
-        assert.isDefined(tool.description);
-        assert.isDefined(tool.parameters);
-      }
-    });
-
-    it("should have get_paper_info tool", function () {
-      const { AVAILABLE_TOOLS } = require("../src/modules/toolCaller");
-      const tool = AVAILABLE_TOOLS.find((t: any) => t.name === "get_paper_info");
-
-      assert.isDefined(tool);
-      assert.equal(tool.parameters.itemID, "number");
-    });
-
-    it("should have get_paper_content tool", function () {
-      const { AVAILABLE_TOOLS } = require("../src/modules/toolCaller");
-      const tool = AVAILABLE_TOOLS.find((t: any) => t.name === "get_paper_content");
-
-      assert.isDefined(tool);
-      assert.equal(tool.parameters.itemID, "number");
-    });
-
-    it("should have search_papers tool", function () {
-      const { AVAILABLE_TOOLS } = require("../src/modules/toolCaller");
-      const tool = AVAILABLE_TOOLS.find((t: any) => t.name === "search_papers");
-
-      assert.isDefined(tool);
-      assert.equal(tool.parameters.query, "string");
-      assert.equal(tool.parameters.limit, "number");
-    });
   });
 });

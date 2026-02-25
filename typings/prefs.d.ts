@@ -11,7 +11,6 @@ declare namespace _ZoteroTypes {
       "apiKey": string;
       "model": string;
       "maxHistoryRounds": number;
-      "enableToolCalling": boolean;
       "systemPrompt": string;
     };
   }

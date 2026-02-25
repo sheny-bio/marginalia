@@ -3,13 +3,12 @@ import { StorageManager } from "./storageManager";
 import { SettingsManager } from "./settingsManager";
 import { ZoteroAPI } from "./zoteroAPI";
 import { MarkdownRenderer } from "../utils/markdown";
-import { ToolCaller, ToolCall, AVAILABLE_TOOLS } from "./toolCaller";
+
 import { getString } from "../utils/locale";
 
 interface StoredMessage {
   role: "user" | "assistant" | "system";
   content: string;
-  toolCalls?: ToolCall[];
 }
 
 export class ChatPanel {
@@ -222,11 +221,11 @@ export class ChatPanel {
     this.showLoading();
 
     try {
-      const { response, toolCalls } = await this.callAPI(message);
+      const response = await this.callAPI(message);
       this.removeLoading();
       // 流式更新已经完成，不需要再 addMessage
       await this.saveMessage("user", message);
-      await this.saveMessage("assistant", response, toolCalls.length > 0 ? toolCalls : undefined);
+      await this.saveMessage("assistant", response);
     } catch (error) {
       this.removeLoading();
       this.showErrorMessage(error);
@@ -277,7 +276,7 @@ export class ChatPanel {
     this.scrollToBottom();
   }
 
-  private addMessage(role: string, content: string, toolCall?: ToolCall, toolResult?: string) {
+  private addMessage(role: string, content: string) {
     const messagesDiv = this.container?.querySelector("#marginalia-messages");
     if (!messagesDiv || !this.container) return;
 
@@ -285,52 +284,23 @@ export class ChatPanel {
     if (!doc) return;
     const messageEl = doc.createElement("div");
 
-    if (toolCall && toolResult !== undefined) {
-      // 工具调用显示为可折叠卡片
-      messageEl.className = "marginalia-tool-call";
-      messageEl.style.cssText = "background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; overflow: hidden;";
+    messageEl.className = `marginalia-message ${role}`;
+    messageEl.style.cssText = `display: flex; margin-bottom: 12px; ${role === "user" ? "justify-content: flex-end;" : "justify-content: flex-start;"}`;
 
-      const header = doc.createElement("div");
-      header.className = "marginalia-tool-call-header";
-      header.style.cssText = "display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #ebebeb; cursor: pointer;";
-      header.innerHTML = `
-        <span style="font-weight: 500; font-size: 12px;">${this.escapeHtml(toolCall.name)}</span>
-        <span style="margin-left: auto; font-size: 11px; color: #D4AF37;">completed</span>
-      `;
+    const contentDiv = doc.createElement("div");
+    contentDiv.className = "marginalia-message-content";
 
-      const body = doc.createElement("div");
-      body.className = "marginalia-tool-call-body";
-      body.style.cssText = "padding: 10px 12px; font-size: 12px; font-family: monospace; border-top: 1px solid #e0e0e0; white-space: pre-wrap; word-break: break-word;";
-      body.innerHTML = `
-        <div style="color: #666; margin-bottom: 8px;">Arguments: ${this.escapeHtml(JSON.stringify(toolCall.arguments))}</div>
-        <div style="color: #333;">${this.escapeHtml(toolResult)}</div>
-      `;
-
-      header.addEventListener("click", () => {
-        body.style.display = body.style.display === "none" ? "block" : "none";
-      });
-
-      messageEl.appendChild(header);
-      messageEl.appendChild(body);
+    if (role === "user") {
+      contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #171717; color: #fff; line-height: 1.5; user-select: text; cursor: text;";
+      contentDiv.textContent = content;
     } else {
-      messageEl.className = `marginalia-message ${role}`;
-      messageEl.style.cssText = `display: flex; margin-bottom: 12px; ${role === "user" ? "justify-content: flex-end;" : "justify-content: flex-start;"}`;
-
-      const contentDiv = doc.createElement("div");
-      contentDiv.className = "marginalia-message-content";
-
-      if (role === "user") {
-        contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #171717; color: #fff; line-height: 1.5; user-select: text; cursor: text;";
-        contentDiv.textContent = content;
-      } else {
-        contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; user-select: text; cursor: text;";
-        contentDiv.innerHTML = MarkdownRenderer.render(content);
-      }
-
-      messageEl.appendChild(contentDiv);
-      // 添加复制按钮
-      this.addCopyButtonToMessage(messageEl, content, role);
+      contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; user-select: text; cursor: text;";
+      contentDiv.innerHTML = MarkdownRenderer.render(content);
     }
+
+    messageEl.appendChild(contentDiv);
+    // 添加复制按钮
+    this.addCopyButtonToMessage(messageEl, content, role);
 
     messagesDiv.appendChild(messageEl);
     this.scrollToBottom();
@@ -396,7 +366,7 @@ export class ChatPanel {
     loading?.remove();
   }
 
-  private async callAPI(userMessage: string): Promise<{ response: string; toolCalls: ToolCall[] }> {
+  private async callAPI(userMessage: string): Promise<string> {
     // 每次调用时检查配置是否变化，变化则重建 APIClient
     const config = await this.settingsManager.getAPIConfig();
     if (
@@ -412,8 +382,6 @@ export class ChatPanel {
 
     const paperInfo = ZoteroAPI.getPaperInfo(this.currentItemID!);
     const systemPrompt = await this.settingsManager.getSystemPrompt();
-    const enableToolCalling = await this.settingsManager.isToolCallingEnabled();
-
     // 获取论文全文内容
     let paperContent = "";
     try {
@@ -441,17 +409,6 @@ ${paperContent}
 
 Please respond using standard Markdown format.`;
 
-    if (enableToolCalling) {
-      systemMessage += `\n\nYou have access to the following tools. To use a tool, wrap your call in XML tags like this:
-<tool_call>
-<name>tool_name</name>
-<arguments>{"param": "value"}</arguments>
-</tool_call>
-
-Available tools:
-${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSON.stringify(t.parameters)}`).join("\n")}`;
-    }
-
     const messages: Message[] = [
       {
         role: "system",
@@ -467,23 +424,7 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
       this.updateLastMessage(fullResponse);
     });
 
-    const executedToolCalls: ToolCall[] = [];
-
-    // 处理工具调用
-    if (enableToolCalling) {
-      const toolCalls = ToolCaller.parseToolCalls(fullResponse);
-      for (const toolCall of toolCalls) {
-        try {
-          const result = await ToolCaller.executeTool(toolCall);
-          this.addMessage("system", result, toolCall, result);
-          executedToolCalls.push(toolCall);
-        } catch (error) {
-          this.addMessage("system", `Error: ${error}`, toolCall, `Error: ${error}`);
-        }
-      }
-    }
-
-    return { response: fullResponse, toolCalls: executedToolCalls };
+    return fullResponse;
   }
 
   private updateLastMessage(content: string) {
@@ -518,7 +459,6 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     this.messages = loadedMessages.map((msg) => ({
       role: msg.role as "user" | "assistant" | "system",
       content: msg.content,
-      toolCalls: msg.toolCalls,
     }));
     const messagesDiv = this.container?.querySelector("#marginalia-messages");
     if (messagesDiv) {
@@ -528,12 +468,6 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
       } else {
         for (const msg of this.messages) {
           this.addMessage(msg.role, msg.content);
-          // 如果有工具调用，显示工具调用卡片
-          if (msg.toolCalls && msg.toolCalls.length > 0) {
-            for (const toolCall of msg.toolCalls) {
-              this.addMessage("system", "", toolCall, "Result loaded from history");
-            }
-          }
         }
       }
     }
@@ -634,15 +568,14 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     }
   }
 
-  private async saveMessage(role: string, content: string, toolCalls?: ToolCall[]) {
+  private async saveMessage(role: string, content: string) {
     if (!this.currentItemID) return;
 
     ztoolkit.log("[ChatPanel] Saving message:", { role, contentLength: content.length, itemID: this.currentItemID });
-    await this.storageManager.saveMessage(this.currentItemID, role, content, toolCalls);
+    await this.storageManager.saveMessage(this.currentItemID, role, content);
     this.messages.push({
       role: role as "user" | "assistant" | "system",
       content,
-      toolCalls,
     });
     ztoolkit.log("[ChatPanel] Message saved, total messages:", this.messages.length);
 
@@ -813,13 +746,6 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
         markdown += `## 👤 User\n\n${msg.content}\n\n`;
       } else if (msg.role === "assistant") {
         markdown += `## 🤖 Assistant\n\n${msg.content}\n\n`;
-        if (msg.toolCalls && msg.toolCalls.length > 0) {
-          for (const tc of msg.toolCalls) {
-            markdown += `<details>\n<summary>🔧 Tool: ${tc.name}</summary>\n\n`;
-            markdown += `**Arguments:**\n\`\`\`json\n${JSON.stringify(tc.arguments, null, 2)}\n\`\`\`\n\n`;
-            markdown += `**Result:**\n\`\`\`\n${tc.result || "No result"}\n\`\`\`\n</details>\n\n`;
-          }
-        }
       }
       markdown += "---\n\n";
     }

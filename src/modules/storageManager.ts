@@ -23,7 +23,7 @@ export class StorageManager {
     return PathUtils.join(this.dataDir, "settings.json");
   }
 
-  async saveMessage(itemID: number, role: string, content: string, toolCalls?: any) {
+  async saveMessage(itemID: number, role: string, content: string) {
     ztoolkit.log("[StorageManager] Saving message:", { itemID, role, contentLength: content.length });
 
     const filePath = this.getConversationFilePath(itemID);
@@ -44,7 +44,6 @@ export class StorageManager {
       role,
       content,
       timestamp: Math.floor(Date.now() / 1000),
-      toolCalls: toolCalls || undefined,
     });
 
     // 保存到文件
@@ -57,7 +56,7 @@ export class StorageManager {
     }
   }
 
-  async getMessages(itemID: number): Promise<Array<{ role: string; content: string; toolCalls?: any }>> {
+  async getMessages(itemID: number): Promise<Array<{ role: string; content: string }>> {
     ztoolkit.log("[StorageManager] Loading messages for itemID:", itemID);
 
     const filePath = this.getConversationFilePath(itemID);
@@ -70,7 +69,6 @@ export class StorageManager {
         return messages.map((msg: any) => ({
           role: msg.role,
           content: msg.content,
-          toolCalls: msg.toolCalls,
         }));
       }
     } catch (error) {
