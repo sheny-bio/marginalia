@@ -52,7 +52,7 @@ export class SettingsManager {
     const value = this.getPref("systemPrompt");
     return (
       value ||
-      "You are a helpful academic paper analysis assistant. Provide clear, concise answers based on the paper content."
+      "你是一位专业的学术论文分析助手。请基于论文内容提供清晰、简洁的回答。请使用中文回复，但专业术语（如 Transformer、Attention、Gradient Descent 等）保留英文原文，不要强行翻译。"
     );
   }
 

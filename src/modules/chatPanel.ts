@@ -494,25 +494,24 @@ export class ChatPanel {
 
     let systemMessage = `${systemPrompt}
 
-Current paper information:
-- Title: ${paperInfo?.title || "Unknown"}
-- Authors: ${paperInfo?.authors?.map((a: any) => `${a.firstName} ${a.lastName}`).join(", ") || "Unknown"}
-- Year: ${paperInfo?.year || "Unknown"}
-- Abstract: ${paperInfo?.abstract || "No abstract available"}
-- Paper ID: ${this.currentItemID}
+当前论文信息：
+- 标题：${paperInfo?.title || "未知"}
+- 作者：${paperInfo?.authors?.map((a: any) => `${a.firstName} ${a.lastName}`).join(", ") || "未知"}
+- 年份：${paperInfo?.year || "未知"}
+- 摘要：${paperInfo?.abstract || "暂无摘要"}
 
-Paper full text content:
+论文全文内容：
 ${paperContent}`;
 
     if (this.quotes.length > 0) {
-      systemMessage += `\n\nUser quoted sections from the paper:\n`;
+      systemMessage += `\n\n用户引用了论文中的以下段落：\n`;
       this.quotes.forEach((q, i) => {
-        systemMessage += `--- Quote ${i + 1} ---\n${q}\n`;
+        systemMessage += `--- 引用 ${i + 1} ---\n${q}\n`;
       });
-      systemMessage += `\nThe user is asking about the above quoted content. Please focus your answer on these specific sections.`;
+      systemMessage += `\n用户正在针对以上引用内容提问，请重点围绕这些段落进行回答。`;
     }
 
-    systemMessage += `\n\nPlease respond using standard Markdown format.`;
+    systemMessage += `\n\n请使用标准 Markdown 格式回复。`;
 
     const messages: Message[] = [
       {
