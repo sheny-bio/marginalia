@@ -42,14 +42,14 @@ export class TranslationPopup {
     if (!selectedText?.trim()) return;
 
     const container = doc.createElement("div");
-    container.style.cssText = "display: flex; flex-direction: row; gap: 4px;";
+    container.style.cssText = "display: flex; flex-direction: row; gap: 4px; padding: 2px 0;";
 
     const btnStyle = `
-      display: flex; align-items: center; justify-content: center;
-      padding: 4px 12px; background: #171717; color: #fff;
-      border: none; border-radius: 6px; cursor: pointer;
-      font-size: 13px; font-weight: 500; font-family: inherit;
-      transition: background 0.15s;
+      display: inline-flex; align-items: center;
+      padding: 3px 10px; background: #f0f0f0; color: #555;
+      border: none; border-radius: 4px; cursor: pointer;
+      font-size: 12px; font-family: inherit; line-height: 1.4;
+      transition: background 0.15s, color 0.15s;
     `;
 
     // 翻译按钮
@@ -57,10 +57,12 @@ export class TranslationPopup {
     translateBtn.textContent = getString("translate-button");
     translateBtn.style.cssText = btnStyle;
     translateBtn.addEventListener("mouseenter", () => {
-      translateBtn.style.background = "#404040";
+      translateBtn.style.background = "#e4e4e4";
+      translateBtn.style.color = "#222";
     });
     translateBtn.addEventListener("mouseleave", () => {
-      translateBtn.style.background = "#171717";
+      translateBtn.style.background = "#f0f0f0";
+      translateBtn.style.color = "#555";
     });
 
     // 引用按钮
@@ -68,10 +70,16 @@ export class TranslationPopup {
     quoteBtn.textContent = getString("quote-button");
     quoteBtn.style.cssText = btnStyle;
     quoteBtn.addEventListener("mouseenter", () => {
-      if (!quoteBtn.disabled) quoteBtn.style.background = "#404040";
+      if (!quoteBtn.disabled) {
+        quoteBtn.style.background = "#e4e4e4";
+        quoteBtn.style.color = "#222";
+      }
     });
     quoteBtn.addEventListener("mouseleave", () => {
-      if (!quoteBtn.disabled) quoteBtn.style.background = "#171717";
+      if (!quoteBtn.disabled) {
+        quoteBtn.style.background = "#f0f0f0";
+        quoteBtn.style.color = "#555";
+      }
     });
 
     container.appendChild(translateBtn);
@@ -87,6 +95,7 @@ export class TranslationPopup {
     translateBtn.addEventListener("click", async () => {
       translateBtn.disabled = true;
       translateBtn.textContent = getString("translate-loading");
+      translateBtn.style.color = "#999";
       translateBtn.style.cursor = "wait";
 
       try {
@@ -103,9 +112,9 @@ export class TranslationPopup {
 
         const resultDiv = doc.createElement("div");
         resultDiv.style.cssText = `
-          padding: 8px 12px; background: #FAFAFA;
-          border: 1px solid #e5e5e5; border-radius: 8px;
-          font-size: 13px; line-height: 1.6; color: #171717;
+          padding: 8px 10px; background: #f8f8f8;
+          border-left: 2px solid #D4AF37; border-radius: 2px;
+          font-size: 12px; line-height: 1.6; color: #333;
           max-height: 200px; overflow-y: auto;
           user-select: text; cursor: text;
         `;
@@ -113,14 +122,17 @@ export class TranslationPopup {
         resultContainer.appendChild(resultDiv);
 
         translateBtn.textContent = getString("translate-button");
+        translateBtn.style.color = "#555";
+        translateBtn.style.background = "#f0f0f0";
         translateBtn.disabled = false;
         translateBtn.style.cursor = "pointer";
       } catch (error) {
         translateBtn.textContent = getString("translate-error");
-        translateBtn.style.background = "#DC2626";
+        translateBtn.style.color = "#DC2626";
         setTimeout(() => {
           translateBtn.textContent = getString("translate-button");
-          translateBtn.style.background = "#171717";
+          translateBtn.style.color = "#555";
+          translateBtn.style.background = "#f0f0f0";
           translateBtn.disabled = false;
           translateBtn.style.cursor = "pointer";
         }, 2000);
@@ -131,12 +143,13 @@ export class TranslationPopup {
     quoteBtn.addEventListener("click", () => {
       this.chatPanel.addQuote(selectedText);
       quoteBtn.textContent = getString("quote-added");
-      quoteBtn.style.background = "#D4AF37";
+      quoteBtn.style.color = "#D4AF37";
       quoteBtn.disabled = true;
       quoteBtn.style.cursor = "default";
       setTimeout(() => {
         quoteBtn.textContent = getString("quote-button");
-        quoteBtn.style.background = "#171717";
+        quoteBtn.style.color = "#555";
+        quoteBtn.style.background = "#f0f0f0";
         quoteBtn.disabled = false;
         quoteBtn.style.cursor = "pointer";
       }, 1000);
@@ -162,5 +175,14 @@ export class TranslationPopup {
     ];
 
     return await apiClient.chat(messages);
+  }
+
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 }
