@@ -201,6 +201,38 @@ export class ChatPanel {
   addQuote(text: string) {
     this.quotes.push(text);
     this.renderQuotes();
+    this.ensurePanelVisible();
+  }
+
+  private ensurePanelVisible() {
+    try {
+      const contextPane = ztoolkit.getGlobal("ZoteroContextPane");
+      if (!contextPane) return;
+
+      // 确保右侧栏已打开
+      const splitter = contextPane.splitter;
+      if (splitter?.getAttribute("state") === "collapsed") {
+        contextPane.togglePane();
+      }
+
+      const sidenav = contextPane.sidenav as any;
+      if (!sidenav) return;
+
+      // 展开面板区域
+      sidenav._collapsed = false;
+
+      // 滚动到插件面板
+      if (sidenav.container?.scrollToPane) {
+        sidenav.container.scrollToPane("marginalia-chat", "smooth");
+      }
+
+      // 刷新 sidenav 状态
+      if (sidenav.render) {
+        sidenav.render();
+      }
+    } catch (error) {
+      ztoolkit.log("Error ensuring panel visible:", error);
+    }
   }
 
   private renderQuotes() {
