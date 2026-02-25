@@ -54,7 +54,7 @@ export class TranslationPopup {
 
     // 翻译按钮
     const translateBtn = doc.createElement("button");
-    translateBtn.textContent = getString("marginalia-translate-button");
+    translateBtn.textContent = getString("translate-button");
     translateBtn.style.cssText = btnStyle;
     translateBtn.addEventListener("mouseenter", () => {
       translateBtn.style.background = "#404040";
@@ -65,7 +65,7 @@ export class TranslationPopup {
 
     // 引用按钮
     const quoteBtn = doc.createElement("button");
-    quoteBtn.textContent = getString("marginalia-quote-button");
+    quoteBtn.textContent = getString("quote-button");
     quoteBtn.style.cssText = btnStyle;
     quoteBtn.addEventListener("mouseenter", () => {
       if (!quoteBtn.disabled) quoteBtn.style.background = "#404040";
@@ -86,7 +86,7 @@ export class TranslationPopup {
     // 翻译按钮点击
     translateBtn.addEventListener("click", async () => {
       translateBtn.disabled = true;
-      translateBtn.textContent = getString("marginalia-translate-loading");
+      translateBtn.textContent = getString("translate-loading");
       translateBtn.style.cursor = "wait";
 
       try {
@@ -112,14 +112,14 @@ export class TranslationPopup {
         resultDiv.textContent = result;
         resultContainer.appendChild(resultDiv);
 
-        translateBtn.textContent = getString("marginalia-translate-button");
+        translateBtn.textContent = getString("translate-button");
         translateBtn.disabled = false;
         translateBtn.style.cursor = "pointer";
       } catch (error) {
-        translateBtn.textContent = getString("marginalia-translate-error");
+        translateBtn.textContent = getString("translate-error");
         translateBtn.style.background = "#DC2626";
         setTimeout(() => {
-          translateBtn.textContent = getString("marginalia-translate-button");
+          translateBtn.textContent = getString("translate-button");
           translateBtn.style.background = "#171717";
           translateBtn.disabled = false;
           translateBtn.style.cursor = "pointer";
@@ -130,12 +130,12 @@ export class TranslationPopup {
     // 引用按钮点击
     quoteBtn.addEventListener("click", () => {
       this.chatPanel.addQuote(selectedText);
-      quoteBtn.textContent = getString("marginalia-quote-added");
+      quoteBtn.textContent = getString("quote-added");
       quoteBtn.style.background = "#D4AF37";
       quoteBtn.disabled = true;
       quoteBtn.style.cursor = "default";
       setTimeout(() => {
-        quoteBtn.textContent = getString("marginalia-quote-button");
+        quoteBtn.textContent = getString("quote-button");
         quoteBtn.style.background = "#171717";
         quoteBtn.disabled = false;
         quoteBtn.style.cursor = "pointer";
