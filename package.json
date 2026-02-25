@@ -1,8 +1,8 @@
 {
   "name": "zotero-plugin-template",
   "type": "module",
-  "version": "3.1.1",
-  "description": "Zotero Plugin Template",
+  "version": "3.1.2",
+  "description": "Zotero AI 聊天助手，支持与论文和批注进行智能对话",
   "config": {
     "addonName": "Marginalia AI Chat",
     "addonID": "marginalia@anthropic.com",
@@ -12,13 +12,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/windingwind/zotero-plugin-template.git"
+    "url": "git+https://github.com/sheny-bio/marginalia.git"
   },
-  "author": "windingwind",
+  "author": "sheny-bio",
   "bugs": {
-    "url": "https://github.com/windingwind/zotero-plugin-template/issues"
+    "url": "https://github.com/sheny-bio/marginalia/issues"
   },
-  "homepage": "https://github.com/windingwind/zotero-plugin-template#readme",
+  "homepage": "https://github.com/sheny-bio/marginalia#readme",
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "start": "zotero-plugin serve",
