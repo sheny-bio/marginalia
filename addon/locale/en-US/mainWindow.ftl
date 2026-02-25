@@ -5,3 +5,5 @@ marginalia-chat-sidenav =
 marginalia-translate-button = Translate
 marginalia-translate-loading = Translating...
 marginalia-translate-error = Translation failed
+marginalia-quote-button = Quote
+marginalia-quote-added = Quoted

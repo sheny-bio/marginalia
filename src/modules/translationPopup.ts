@@ -1,13 +1,16 @@
 import { APIClient, Message } from "./apiClient";
 import { SettingsManager } from "./settingsManager";
+import { ChatPanel } from "./chatPanel";
 import { getString } from "../utils/locale";
 
 export class TranslationPopup {
   private settingsManager: SettingsManager;
+  private chatPanel: ChatPanel;
   private handler: any;
 
-  constructor(settingsManager: SettingsManager) {
+  constructor(settingsManager: SettingsManager, chatPanel: ChatPanel) {
     this.settingsManager = settingsManager;
+    this.chatPanel = chatPanel;
   }
 
   register(): void {
@@ -39,18 +42,20 @@ export class TranslationPopup {
     if (!selectedText?.trim()) return;
 
     const container = doc.createElement("div");
-    container.style.cssText =
-      "display: flex; flex-direction: column; gap: 4px;";
+    container.style.cssText = "display: flex; flex-direction: row; gap: 4px;";
 
-    const translateBtn = doc.createElement("button");
-    translateBtn.textContent = getString("marginalia-translate-button");
-    translateBtn.style.cssText = `
+    const btnStyle = `
       display: flex; align-items: center; justify-content: center;
       padding: 4px 12px; background: #171717; color: #fff;
       border: none; border-radius: 6px; cursor: pointer;
       font-size: 13px; font-weight: 500; font-family: inherit;
       transition: background 0.15s;
     `;
+
+    // 翻译按钮
+    const translateBtn = doc.createElement("button");
+    translateBtn.textContent = getString("marginalia-translate-button");
+    translateBtn.style.cssText = btnStyle;
     translateBtn.addEventListener("mouseenter", () => {
       translateBtn.style.background = "#404040";
     });
@@ -58,9 +63,27 @@ export class TranslationPopup {
       translateBtn.style.background = "#171717";
     });
 
+    // 引用按钮
+    const quoteBtn = doc.createElement("button");
+    quoteBtn.textContent = getString("marginalia-quote-button");
+    quoteBtn.style.cssText = btnStyle;
+    quoteBtn.addEventListener("mouseenter", () => {
+      if (!quoteBtn.disabled) quoteBtn.style.background = "#404040";
+    });
+    quoteBtn.addEventListener("mouseleave", () => {
+      if (!quoteBtn.disabled) quoteBtn.style.background = "#171717";
+    });
+
     container.appendChild(translateBtn);
+    container.appendChild(quoteBtn);
     append(container);
 
+    // 翻译结果容器（按钮行下方）
+    const resultContainer = doc.createElement("div");
+    resultContainer.style.cssText = "display: flex; flex-direction: column; gap: 4px;";
+    append(resultContainer);
+
+    // 翻译按钮点击
     translateBtn.addEventListener("click", async () => {
       translateBtn.disabled = true;
       translateBtn.textContent = getString("marginalia-translate-loading");
@@ -87,7 +110,7 @@ export class TranslationPopup {
           user-select: text; cursor: text;
         `;
         resultDiv.textContent = result;
-        container.appendChild(resultDiv);
+        resultContainer.appendChild(resultDiv);
 
         translateBtn.textContent = getString("marginalia-translate-button");
         translateBtn.disabled = false;
@@ -102,6 +125,21 @@ export class TranslationPopup {
           translateBtn.style.cursor = "pointer";
         }, 2000);
       }
+    });
+
+    // 引用按钮点击
+    quoteBtn.addEventListener("click", () => {
+      this.chatPanel.addQuote(selectedText);
+      quoteBtn.textContent = getString("marginalia-quote-added");
+      quoteBtn.style.background = "#D4AF37";
+      quoteBtn.disabled = true;
+      quoteBtn.style.cursor = "default";
+      setTimeout(() => {
+        quoteBtn.textContent = getString("marginalia-quote-button");
+        quoteBtn.style.background = "#171717";
+        quoteBtn.disabled = false;
+        quoteBtn.style.cursor = "pointer";
+      }, 1000);
     });
   }
 

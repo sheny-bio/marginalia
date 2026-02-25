@@ -30,6 +30,8 @@ export type FluentMessageId =
   | 'chat-welcome-title'
   | 'marginalia-chat-header'
   | 'marginalia-chat-sidenav'
+  | 'marginalia-quote-added'
+  | 'marginalia-quote-button'
   | 'marginalia-translate-button'
   | 'marginalia-translate-error'
   | 'marginalia-translate-loading'

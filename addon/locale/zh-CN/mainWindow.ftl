@@ -5,3 +5,5 @@ marginalia-chat-sidenav =
 marginalia-translate-button = 翻译
 marginalia-translate-loading = 翻译中...
 marginalia-translate-error = 翻译失败
+marginalia-quote-button = 引用
+marginalia-quote-added = 已引用

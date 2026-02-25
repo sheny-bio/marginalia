@@ -22,6 +22,7 @@ export class ChatPanel {
   private messages: StoredMessage[] = [];
   private dropdownVisible: boolean = false;
   private currentItem: any = null;
+  private quotes: string[] = [];
 
   constructor(storageManager: StorageManager, settingsManager: SettingsManager) {
     this.storageManager = storageManager;
@@ -191,7 +192,68 @@ export class ChatPanel {
     if (item) {
       this.currentItemID = item.id;
       this.currentItem = item;
+      this.quotes = [];
+      this.renderQuotes();
       await this.loadMessages();
+    }
+  }
+
+  addQuote(text: string) {
+    this.quotes.push(text);
+    this.renderQuotes();
+  }
+
+  private renderQuotes() {
+    const inputArea = this.container?.querySelector(".marginalia-input-area");
+    if (!inputArea) return;
+    const doc = this.container?.ownerDocument;
+    if (!doc) return;
+
+    // 移除旧的引用区域
+    const existing = inputArea.querySelector("#marginalia-quotes");
+    if (existing) existing.remove();
+
+    if (this.quotes.length === 0) return;
+
+    const quotesDiv = doc.createElement("div");
+    quotesDiv.id = "marginalia-quotes";
+    quotesDiv.style.cssText = "display: flex; flex-wrap: wrap; gap: 6px; padding: 0 0 8px 0;";
+
+    this.quotes.forEach((text, index) => {
+      const chip = doc.createElement("div");
+      chip.style.cssText = `
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 4px 8px; background: #F5F5F5; border: 1px solid #e5e5e5;
+        border-radius: 6px; font-size: 12px; color: #6B7280;
+        max-width: 120px;
+      `;
+
+      const label = doc.createElement("span");
+      label.style.cssText = "overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
+      label.textContent = text.length > 5 ? text.substring(0, 5) + "..." : text;
+      label.title = text.substring(0, 100);
+
+      const closeBtn = doc.createElement("span");
+      closeBtn.textContent = "×";
+      closeBtn.style.cssText = "cursor: pointer; color: #9CA3AF; font-size: 14px; line-height: 1; flex-shrink: 0;";
+      closeBtn.addEventListener("mouseenter", () => { closeBtn.style.color = "#DC2626"; });
+      closeBtn.addEventListener("mouseleave", () => { closeBtn.style.color = "#9CA3AF"; });
+      closeBtn.addEventListener("click", () => {
+        this.quotes.splice(index, 1);
+        this.renderQuotes();
+      });
+
+      chip.appendChild(label);
+      chip.appendChild(closeBtn);
+      quotesDiv.appendChild(chip);
+    });
+
+    // 插入到 inputContainer 之前
+    const inputContainer = inputArea.querySelector(".marginalia-input-container");
+    if (inputContainer) {
+      inputArea.insertBefore(quotesDiv, inputContainer);
+    } else {
+      inputArea.prepend(quotesDiv);
     }
   }
 
@@ -226,6 +288,9 @@ export class ChatPanel {
       // 流式更新已经完成，不需要再 addMessage
       await this.saveMessage("user", message);
       await this.saveMessage("assistant", response);
+      // 发送后清空引用
+      this.quotes = [];
+      this.renderQuotes();
     } catch (error) {
       this.removeLoading();
       this.showErrorMessage(error);
@@ -405,9 +470,17 @@ Current paper information:
 - Paper ID: ${this.currentItemID}
 
 Paper full text content:
-${paperContent}
+${paperContent}`;
 
-Please respond using standard Markdown format.`;
+    if (this.quotes.length > 0) {
+      systemMessage += `\n\nUser quoted sections from the paper:\n`;
+      this.quotes.forEach((q, i) => {
+        systemMessage += `--- Quote ${i + 1} ---\n${q}\n`;
+      });
+      systemMessage += `\nThe user is asking about the above quoted content. Please focus your answer on these specific sections.`;
+    }
+
+    systemMessage += `\n\nPlease respond using standard Markdown format.`;
 
     const messages: Message[] = [
       {

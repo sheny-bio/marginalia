@@ -9,7 +9,7 @@ import { TranslationPopup } from "./modules/translationPopup";
 const storageManager = new StorageManager();
 const settingsManager = new SettingsManager(storageManager);
 const chatPanel = new ChatPanel(storageManager, settingsManager);
-const translationPopup = new TranslationPopup(settingsManager);
+const translationPopup = new TranslationPopup(settingsManager, chatPanel);
 
 async function onStartup() {
   await Promise.all([
