@@ -325,16 +325,6 @@ export class ChatPanel {
       } else {
         contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; user-select: text; cursor: text;";
         contentDiv.innerHTML = MarkdownRenderer.render(content);
-
-        // 添加 PDF 引用链接的点击事件
-        contentDiv.querySelectorAll('.pdf-cite-link').forEach((link: Element) => {
-          link.addEventListener('click', (e: Event) => {
-            e.preventDefault();
-            const pageNum = parseInt((e.target as HTMLElement).dataset.page || '0');
-            const text = (e.target as HTMLElement).dataset.text || '';
-            this.navigateToCitation(pageNum, text);
-          });
-        });
       }
 
       messageEl.appendChild(contentDiv);
@@ -449,13 +439,7 @@ Current paper information:
 Paper full text content:
 ${paperContent}
 
-IMPORTANT: When citing specific content from the paper, use this citation format:
-[quoted text (p.X)](#cite:X:quoted text)
-
-Where X is the page number. The quoted text should be a short excerpt (5-15 words) from the paper.
-Example: [实验准确率达到95% (p.5)](#cite:5:实验准确率达到95%)
-
-Always provide citations when discussing specific findings, methods, or results from the paper.`;
+Please respond using standard Markdown format.`;
 
     if (enableToolCalling) {
       systemMessage += `\n\nYou have access to the following tools. To use a tool, wrap your call in XML tags like this:
@@ -1122,83 +1106,4 @@ ${AVAILABLE_TOOLS.map((t) => `- ${t.name}: ${t.description}\n  Parameters: ${JSO
     contentDiv.appendChild(copyBtn);
   }
 
-  // PDF 引用跳转
-  private async navigateToCitation(pageNum: number, text: string) {
-    try {
-      const item = Zotero.Items.get(this.currentItemID!);
-      if (!item) return;
-
-      let pdfAttachmentID: number | null = null;
-      const attachmentIDs = item.getAttachments();
-      for (const attachmentID of attachmentIDs) {
-        const attachment = Zotero.Items.get(attachmentID);
-        if (attachment && attachment.attachmentContentType === 'application/pdf') {
-          pdfAttachmentID = attachmentID;
-          break;
-        }
-      }
-
-      if (!pdfAttachmentID) return;
-
-      // 查找当前论文的 reader（通过附件 ID 匹配）
-      const readers = Zotero.Reader._readers || [];
-      let currentReader = null;
-      for (const reader of readers) {
-        if ((reader as any).itemID === pdfAttachmentID) {
-          currentReader = reader;
-          break;
-        }
-      }
-
-      if (!currentReader) {
-        await Zotero.Reader.open(pdfAttachmentID, { pageIndex: pageNum - 1 });
-        const updatedReaders = Zotero.Reader._readers || [];
-        for (const reader of updatedReaders) {
-          if ((reader as any).itemID === pdfAttachmentID) {
-            currentReader = reader;
-            break;
-          }
-        }
-      } else {
-        await currentReader.navigate({ pageIndex: pageNum - 1 });
-      }
-
-      // 搜索并高亮文字
-      if (text && currentReader) {
-        setTimeout(() => {
-          try {
-            const searchText = decodeURIComponent(text).trim();
-            const ir = (currentReader as any)._internalReader;
-            if (!ir) return;
-
-            ir.toggleFindPopup({ primary: true, open: true });
-
-            setTimeout(() => {
-              try {
-                ir.setFindState({
-                  ...ir._state.primaryViewFindState,
-                  popupOpen: true,
-                  active: true,
-                  query: searchText,
-                  highlightAll: true,
-                  caseSensitive: false,
-                  entireWord: false,
-                });
-              } catch {
-                ir._state.primaryViewFindState.query = searchText;
-                ir._state.primaryViewFindState.active = true;
-                ir._state.primaryViewFindState.highlightAll = true;
-                ir._updateState();
-                ir.findNext(true);
-              }
-            }, 300);
-          } catch (e) {
-            ztoolkit.log('[ChatPanel] Search failed:', e);
-          }
-        }, 1000);
-      }
-    } catch (error) {
-      ztoolkit.log('[ChatPanel] Error navigating to citation:', error);
-    }
-  }
 }
