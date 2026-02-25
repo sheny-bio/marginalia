@@ -2,3 +2,6 @@ marginalia-chat-header =
     .label = AI Chat
 marginalia-chat-sidenav =
     .tooltiptext = AI Chat
+marginalia-translate-button = Translate
+marginalia-translate-loading = Translating...
+marginalia-translate-error = Translation failed

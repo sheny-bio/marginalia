@@ -4,10 +4,12 @@ import { createZToolkit } from "./utils/ztoolkit";
 import { ChatPanel } from "./modules/chatPanel";
 import { StorageManager } from "./modules/storageManager";
 import { SettingsManager } from "./modules/settingsManager";
+import { TranslationPopup } from "./modules/translationPopup";
 
 const storageManager = new StorageManager();
 const settingsManager = new SettingsManager(storageManager);
 const chatPanel = new ChatPanel(storageManager, settingsManager);
+const translationPopup = new TranslationPopup(settingsManager);
 
 async function onStartup() {
   await Promise.all([
@@ -25,6 +27,7 @@ async function onStartup() {
     Zotero.getMainWindows().map((win) => onMainWindowLoad(win)),
   );
 
+  translationPopup.register();
   addon.data.initialized = true;
 }
 
@@ -54,6 +57,7 @@ async function onMainWindowUnload(win: Window): Promise<void> {
 }
 
 function onShutdown(): void {
+  translationPopup.unregister();
   ztoolkit.unregisterAll();
   addon.data.dialog?.window?.close();
   // Remove addon object
