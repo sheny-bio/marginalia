@@ -1,5 +1,8 @@
 import { getString, initLocale } from "./utils/locale";
-import { registerPrefsScripts, registerPrefsPane } from "./modules/preferenceScript";
+import {
+  registerPrefsScripts,
+  registerPrefsPane,
+} from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
 import { ChatPanel } from "./modules/chatPanel";
 import { StorageManager } from "./modules/storageManager";

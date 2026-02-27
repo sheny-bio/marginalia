@@ -16,14 +16,18 @@ export class ChatPanel {
   private inputElement: HTMLTextAreaElement | null = null;
   private currentItemID: number | null = null;
   private apiClient: APIClient | null = null;
-  private lastAPIConfig: { url: string; apiKey: string; model: string } | null = null;
+  private lastAPIConfig: { url: string; apiKey: string; model: string } | null =
+    null;
   private storageManager: StorageManager;
   private settingsManager: SettingsManager;
   private messages: StoredMessage[] = [];
   private currentItem: any = null;
   private quotes: string[] = [];
 
-  constructor(storageManager: StorageManager, settingsManager: SettingsManager) {
+  constructor(
+    storageManager: StorageManager,
+    settingsManager: SettingsManager,
+  ) {
     this.storageManager = storageManager;
     this.settingsManager = settingsManager;
   }
@@ -69,30 +73,41 @@ export class ChatPanel {
           const messagesDiv = doc.createElement("div");
           messagesDiv.id = "marginalia-messages";
           messagesDiv.className = "marginalia-messages";
-          messagesDiv.style.cssText = "flex: 1; overflow-y: auto; min-height: 200px; padding: 12px;";
+          messagesDiv.style.cssText =
+            "flex: 1; overflow-y: auto; min-height: 200px; padding: 12px;";
 
           // 创建输入区域
           const inputArea = doc.createElement("div");
           inputArea.className = "marginalia-input-area";
-          inputArea.style.cssText = "flex-shrink: 0; padding: 16px; background: #fff; border-top: 1px solid #e5e5e5;";
+          inputArea.style.cssText =
+            "flex-shrink: 0; padding: 16px; background: #fff; border-top: 1px solid #e5e5e5;";
 
           // 创建工具栏
           const toolbar = doc.createElement("div");
           toolbar.className = "marginalia-toolbar";
-          toolbar.style.cssText = "display: flex; align-items: center; gap: 4px; padding: 0 0 8px 0;";
+          toolbar.style.cssText =
+            "display: flex; align-items: center; gap: 4px; padding: 0 0 8px 0;";
 
           // 导出按钮
           const exportBtn = doc.createElement("button");
           exportBtn.className = "marginalia-toolbar-btn";
           exportBtn.title = getString("chat-menu-export");
-          exportBtn.style.cssText = "display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: none; border: 1px solid transparent; border-radius: 6px; cursor: pointer; color: #9CA3AF; transition: all 0.15s; padding: 0;";
-          exportBtn.appendChild(this.createSvgIcon(doc, [
-            { tag: "path", attrs: { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" } },
-            { tag: "polyline", attrs: { points: "14 2 14 8 20 8" } },
-            { tag: "line", attrs: { x1: "16", y1: "13", x2: "8", y2: "13" } },
-            { tag: "line", attrs: { x1: "16", y1: "17", x2: "8", y2: "17" } },
-            { tag: "polyline", attrs: { points: "10 9 9 9 8 9" } },
-          ]));
+          exportBtn.style.cssText =
+            "display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: none; border: 1px solid transparent; border-radius: 6px; cursor: pointer; color: #9CA3AF; transition: all 0.15s; padding: 0;";
+          exportBtn.appendChild(
+            this.createSvgIcon(doc, [
+              {
+                tag: "path",
+                attrs: {
+                  d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z",
+                },
+              },
+              { tag: "polyline", attrs: { points: "14 2 14 8 20 8" } },
+              { tag: "line", attrs: { x1: "16", y1: "13", x2: "8", y2: "13" } },
+              { tag: "line", attrs: { x1: "16", y1: "17", x2: "8", y2: "17" } },
+              { tag: "polyline", attrs: { points: "10 9 9 9 8 9" } },
+            ]),
+          );
           exportBtn.addEventListener("mouseenter", () => {
             exportBtn.style.background = "#F5F5F5";
             exportBtn.style.borderColor = "#e5e5e5";
@@ -109,11 +124,19 @@ export class ChatPanel {
           const clearBtn = doc.createElement("button");
           clearBtn.className = "marginalia-toolbar-btn";
           clearBtn.title = getString("chat-menu-clear");
-          clearBtn.style.cssText = "display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: none; border: 1px solid transparent; border-radius: 6px; cursor: pointer; color: #9CA3AF; transition: all 0.15s; padding: 0;";
-          clearBtn.appendChild(this.createSvgIcon(doc, [
-            { tag: "polyline", attrs: { points: "3 6 5 6 21 6" } },
-            { tag: "path", attrs: { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" } },
-          ]));
+          clearBtn.style.cssText =
+            "display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: none; border: 1px solid transparent; border-radius: 6px; cursor: pointer; color: #9CA3AF; transition: all 0.15s; padding: 0;";
+          clearBtn.appendChild(
+            this.createSvgIcon(doc, [
+              { tag: "polyline", attrs: { points: "3 6 5 6 21 6" } },
+              {
+                tag: "path",
+                attrs: {
+                  d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
+                },
+              },
+            ]),
+          );
           clearBtn.addEventListener("mouseenter", () => {
             clearBtn.style.background = "#FEF2F2";
             clearBtn.style.borderColor = "#FECACA";
@@ -124,7 +147,9 @@ export class ChatPanel {
             clearBtn.style.borderColor = "transparent";
             clearBtn.style.color = "#9CA3AF";
           });
-          clearBtn.addEventListener("click", () => this.showClearConfirmDialog());
+          clearBtn.addEventListener("click", () =>
+            this.showClearConfirmDialog(),
+          );
 
           toolbar.appendChild(exportBtn);
           toolbar.appendChild(clearBtn);
@@ -132,7 +157,8 @@ export class ChatPanel {
           // 创建输入容器
           const inputContainer = doc.createElement("div");
           inputContainer.className = "marginalia-input-container";
-          inputContainer.style.cssText = "display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #fff; border: 1px solid #e5e5e5; border-radius: 24px; transition: border-color 0.2s, box-shadow 0.2s;";
+          inputContainer.style.cssText =
+            "display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #fff; border: 1px solid #e5e5e5; border-radius: 24px; transition: border-color 0.2s, box-shadow 0.2s;";
 
           // 创建输入框
           const textarea = doc.createElement("textarea") as HTMLTextAreaElement;
@@ -140,7 +166,8 @@ export class ChatPanel {
           textarea.className = "marginalia-input";
           textarea.placeholder = getString("chat-input-placeholder");
           textarea.rows = 1;
-          textarea.style.cssText = "flex: 1; min-width: 0; padding: 6px 8px; background: transparent; border: none; font-size: 14px; font-family: inherit; color: #171717; resize: none; max-height: 120px; line-height: 1.5; outline: none;";
+          textarea.style.cssText =
+            "flex: 1; min-width: 0; padding: 6px 8px; background: transparent; border: none; font-size: 14px; font-family: inherit; color: #171717; resize: none; max-height: 120px; line-height: 1.5; outline: none;";
           this.inputElement = textarea;
 
           // 输入框自适应高度
@@ -153,7 +180,8 @@ export class ChatPanel {
           // 容器聚焦效果
           textarea.addEventListener("focus", () => {
             inputContainer.style.borderColor = "#D4AF37";
-            inputContainer.style.boxShadow = "0 0 0 3px rgba(212, 175, 55, 0.1)";
+            inputContainer.style.boxShadow =
+              "0 0 0 3px rgba(212, 175, 55, 0.1)";
           });
           textarea.addEventListener("blur", () => {
             inputContainer.style.borderColor = "#e5e5e5";
@@ -164,7 +192,8 @@ export class ChatPanel {
           const sendBtn = doc.createElement("button");
           sendBtn.id = "marginalia-send";
           sendBtn.textContent = getString("chat-send-button");
-          sendBtn.style.cssText = "display: flex; align-items: center; justify-content: center; padding: 8px 16px; background: #171717; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; flex-shrink: 0;";
+          sendBtn.style.cssText =
+            "display: flex; align-items: center; justify-content: center; padding: 8px 16px; background: #171717; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; flex-shrink: 0;";
           sendBtn.addEventListener("mouseenter", () => {
             sendBtn.style.background = "#404040";
           });
@@ -262,7 +291,8 @@ export class ChatPanel {
 
     const quotesDiv = doc.createElement("div");
     quotesDiv.id = "marginalia-quotes";
-    quotesDiv.style.cssText = "display: flex; flex-wrap: wrap; gap: 6px; padding: 0 0 8px 0;";
+    quotesDiv.style.cssText =
+      "display: flex; flex-wrap: wrap; gap: 6px; padding: 0 0 8px 0;";
 
     this.quotes.forEach((text, index) => {
       const chip = doc.createElement("div");
@@ -274,15 +304,21 @@ export class ChatPanel {
       `;
 
       const label = doc.createElement("span");
-      label.style.cssText = "overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
+      label.style.cssText =
+        "overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
       label.textContent = text.length > 5 ? text.substring(0, 5) + "..." : text;
       label.title = text.substring(0, 100);
 
       const closeBtn = doc.createElement("span");
       closeBtn.textContent = "×";
-      closeBtn.style.cssText = "cursor: pointer; color: #9CA3AF; font-size: 14px; line-height: 1; flex-shrink: 0;";
-      closeBtn.addEventListener("mouseenter", () => { closeBtn.style.color = "#DC2626"; });
-      closeBtn.addEventListener("mouseleave", () => { closeBtn.style.color = "#9CA3AF"; });
+      closeBtn.style.cssText =
+        "cursor: pointer; color: #9CA3AF; font-size: 14px; line-height: 1; flex-shrink: 0;";
+      closeBtn.addEventListener("mouseenter", () => {
+        closeBtn.style.color = "#DC2626";
+      });
+      closeBtn.addEventListener("mouseleave", () => {
+        closeBtn.style.color = "#9CA3AF";
+      });
       closeBtn.addEventListener("click", () => {
         this.quotes.splice(index, 1);
         this.renderQuotes();
@@ -294,7 +330,9 @@ export class ChatPanel {
     });
 
     // 插入到 inputContainer 之前
-    const inputContainer = inputArea.querySelector(".marginalia-input-container");
+    const inputContainer = inputArea.querySelector(
+      ".marginalia-input-container",
+    );
     if (inputContainer) {
       inputArea.insertBefore(quotesDiv, inputContainer);
     } else {
@@ -313,7 +351,12 @@ export class ChatPanel {
     }
 
     const message = input.value?.trim();
-    ztoolkit.log("message:", message || "<empty string>", "currentItemID:", this.currentItemID);
+    ztoolkit.log(
+      "message:",
+      message || "<empty string>",
+      "currentItemID:",
+      this.currentItemID,
+    );
 
     if (!message || !this.currentItemID) {
       ztoolkit.log("Early return - message empty or no item selected");
@@ -349,9 +392,13 @@ export class ChatPanel {
     if (!doc || !messagesDiv) return;
 
     // 移除空的 assistant 消息
-    const lastAssistant = messagesDiv.querySelector(".marginalia-message.assistant:last-of-type");
+    const lastAssistant = messagesDiv.querySelector(
+      ".marginalia-message.assistant:last-of-type",
+    );
     if (lastAssistant) {
-      const content = lastAssistant.querySelector(".marginalia-message-content");
+      const content = lastAssistant.querySelector(
+        ".marginalia-message-content",
+      );
       if (content && !content.textContent?.trim()) {
         lastAssistant.remove();
       }
@@ -401,10 +448,12 @@ export class ChatPanel {
     contentDiv.className = "marginalia-message-content";
 
     if (role === "user") {
-      contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #171717; color: #fff; line-height: 1.5; user-select: text; cursor: text;";
+      contentDiv.style.cssText =
+        "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #171717; color: #fff; line-height: 1.5; user-select: text; cursor: text;";
       contentDiv.textContent = content;
     } else {
-      contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; user-select: text; cursor: text;";
+      contentDiv.style.cssText =
+        "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; user-select: text; cursor: text;";
       contentDiv.innerHTML = MarkdownRenderer.render(content);
     }
 
@@ -418,7 +467,9 @@ export class ChatPanel {
 
   // 平滑滚动到底部
   private scrollToBottom() {
-    const messagesDiv = this.container?.querySelector("#marginalia-messages") as HTMLElement;
+    const messagesDiv = this.container?.querySelector(
+      "#marginalia-messages",
+    ) as HTMLElement;
     if (!messagesDiv) return;
 
     // 使用 smooth 滚动
@@ -440,7 +491,8 @@ export class ChatPanel {
 
     const contentDiv = doc.createElement("div");
     contentDiv.className = "marginalia-message-content";
-    contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; display: flex; align-items: center; gap: 10px;";
+    contentDiv.style.cssText =
+      "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; display: flex; align-items: center; gap: 10px;";
     contentDiv.innerHTML = `
       <div class="marginalia-spinner" style="
         width: 18px;
@@ -487,7 +539,11 @@ export class ChatPanel {
       this.lastAPIConfig.model !== config.model
     ) {
       this.apiClient = new APIClient(config);
-      this.lastAPIConfig = { url: config.url, apiKey: config.apiKey, model: config.model };
+      this.lastAPIConfig = {
+        url: config.url,
+        apiKey: config.apiKey,
+        model: config.model,
+      };
     }
 
     const paperInfo = ZoteroAPI.getPaperInfo(this.currentItemID!);
@@ -498,9 +554,11 @@ export class ChatPanel {
       throw new Error(getString("chat-no-pdf-content"));
     }
     // 限制全文长度，避免超出 token 限制
-    const truncatedContent = paperContent.length > 50000
-      ? paperContent.substring(0, 50000) + "\n\n[Content truncated due to length...]"
-      : paperContent;
+    const truncatedContent =
+      paperContent.length > 50000
+        ? paperContent.substring(0, 50000) +
+          "\n\n[Content truncated due to length...]"
+        : paperContent;
 
     let systemMessage = `${systemPrompt}
 
@@ -547,16 +605,23 @@ ${truncatedContent}`;
 
     if (loading) {
       loading.removeAttribute("id");
-      const contentDiv = loading.querySelector(".marginalia-message-content") as HTMLElement;
+      const contentDiv = loading.querySelector(
+        ".marginalia-message-content",
+      ) as HTMLElement;
       if (contentDiv) {
-        contentDiv.style.cssText = "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; user-select: text; cursor: text;";
+        contentDiv.style.cssText =
+          "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; user-select: text; cursor: text;";
         contentDiv.innerHTML = MarkdownRenderer.render(content);
       }
     } else {
-      const messages = messagesDiv?.querySelectorAll(".marginalia-message.assistant");
+      const messages = messagesDiv?.querySelectorAll(
+        ".marginalia-message.assistant",
+      );
       if (messages && messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
-        const contentDiv = lastMessage.querySelector(".marginalia-message-content");
+        const contentDiv = lastMessage.querySelector(
+          ".marginalia-message-content",
+        );
         if (contentDiv) {
           contentDiv.innerHTML = MarkdownRenderer.render(content);
         }
@@ -567,9 +632,18 @@ ${truncatedContent}`;
   private async loadMessages() {
     if (!this.currentItemID) return;
 
-    ztoolkit.log("[ChatPanel] Loading messages for itemID:", this.currentItemID);
-    const loadedMessages = await this.storageManager.getMessages(this.currentItemID);
-    ztoolkit.log("[ChatPanel] Loaded", loadedMessages.length, "messages from storage");
+    ztoolkit.log(
+      "[ChatPanel] Loading messages for itemID:",
+      this.currentItemID,
+    );
+    const loadedMessages = await this.storageManager.getMessages(
+      this.currentItemID,
+    );
+    ztoolkit.log(
+      "[ChatPanel] Loaded",
+      loadedMessages.length,
+      "messages from storage",
+    );
     this.messages = loadedMessages.map((msg) => ({
       role: msg.role as "user" | "assistant" | "system",
       content: msg.content,
@@ -606,7 +680,8 @@ ${truncatedContent}`;
     `;
 
     const title = this.currentItem?.getField?.("title") || "";
-    const truncatedTitle = title.length > 60 ? title.substring(0, 60) + "..." : title;
+    const truncatedTitle =
+      title.length > 60 ? title.substring(0, 60) + "..." : title;
 
     welcome.innerHTML = `
       <div style="
@@ -637,7 +712,9 @@ ${truncatedContent}`;
       getString("chat-suggestion-limitations"),
     ];
 
-    const suggestionsContainer = welcome.querySelector("#marginalia-welcome-suggestions");
+    const suggestionsContainer = welcome.querySelector(
+      "#marginalia-welcome-suggestions",
+    );
     if (suggestionsContainer) {
       for (const text of suggestions) {
         const btn = doc.createElement("button");
@@ -685,13 +762,20 @@ ${truncatedContent}`;
   private async saveMessage(role: string, content: string) {
     if (!this.currentItemID) return;
 
-    ztoolkit.log("[ChatPanel] Saving message:", { role, contentLength: content.length, itemID: this.currentItemID });
+    ztoolkit.log("[ChatPanel] Saving message:", {
+      role,
+      contentLength: content.length,
+      itemID: this.currentItemID,
+    });
     await this.storageManager.saveMessage(this.currentItemID, role, content);
     this.messages.push({
       role: role as "user" | "assistant" | "system",
       content,
     });
-    ztoolkit.log("[ChatPanel] Message saved, total messages:", this.messages.length);
+    ztoolkit.log(
+      "[ChatPanel] Message saved, total messages:",
+      this.messages.length,
+    );
 
     // 检查并执行对话轮数限制
     await this.enforceHistoryLimit();
@@ -710,13 +794,19 @@ ${truncatedContent}`;
     if (currentRounds > maxRounds) {
       const roundsToRemove = currentRounds - maxRounds;
       // 删除最早的几轮对话
-      await this.storageManager.deleteOldestMessages(this.currentItemID, roundsToRemove * 2);
+      await this.storageManager.deleteOldestMessages(
+        this.currentItemID,
+        roundsToRemove * 2,
+      );
       // 重新加载消息
       await this.loadMessages();
     }
   }
 
-  private createSvgIcon(doc: Document, children: { tag: string; attrs: Record<string, string> }[]): SVGSVGElement {
+  private createSvgIcon(
+    doc: Document,
+    children: { tag: string; attrs: Record<string, string> }[],
+  ): SVGSVGElement {
     const NS = "http://www.w3.org/2000/svg";
     const svg = doc.createElementNS(NS, "svg") as unknown as SVGSVGElement;
     svg.setAttribute("width", "16");
@@ -752,7 +842,9 @@ ${truncatedContent}`;
   private async exportAsMarkdown() {
     const markdown = this.generateMarkdownContent();
     const title = this.currentItem?.getField?.("title") || "conversation";
-    const safeTitle = title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "_").substring(0, 50);
+    const safeTitle = title
+      .replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "_")
+      .substring(0, 50);
     const filename = `${safeTitle}_chat_${new Date().toISOString().split("T")[0]}.md`;
 
     try {
@@ -761,7 +853,7 @@ ${truncatedContent}`;
         "Save Markdown",
         "save",
         [["Markdown Files (*.md)", "*.md"]],
-        filename
+        filename,
       ).open();
 
       if (path) {
@@ -823,22 +915,27 @@ ${truncatedContent}`;
     `;
 
     const titleDiv = doc.createElement("div");
-    titleDiv.style.cssText = "font-size: 16px; font-weight: 600; color: #171717; margin-bottom: 8px;";
+    titleDiv.style.cssText =
+      "font-size: 16px; font-weight: 600; color: #171717; margin-bottom: 8px;";
     titleDiv.textContent = getString("chat-dialog-clear-title");
 
     const messageDiv = doc.createElement("div");
-    messageDiv.style.cssText = "font-size: 14px; color: #6B7280; margin-bottom: 20px; line-height: 1.5;";
+    messageDiv.style.cssText =
+      "font-size: 14px; color: #6B7280; margin-bottom: 20px; line-height: 1.5;";
     messageDiv.textContent = getString("chat-dialog-clear-message");
 
     const buttonsDiv = doc.createElement("div");
-    buttonsDiv.style.cssText = "display: flex; gap: 12px; justify-content: flex-end;";
+    buttonsDiv.style.cssText =
+      "display: flex; gap: 12px; justify-content: flex-end;";
 
     const cancelBtn = doc.createElement("button");
-    cancelBtn.style.cssText = "padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #F5F5F5; color: #171717; border: none; font-family: inherit; transition: background 150ms; display: flex; align-items: center; justify-content: center;";
+    cancelBtn.style.cssText =
+      "padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #F5F5F5; color: #171717; border: none; font-family: inherit; transition: background 150ms; display: flex; align-items: center; justify-content: center;";
     cancelBtn.textContent = getString("chat-dialog-cancel");
 
     const confirmBtn = doc.createElement("button");
-    confirmBtn.style.cssText = "padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #DC2626; color: #fff; border: none; font-family: inherit; transition: background 150ms; display: flex; align-items: center; justify-content: center;";
+    confirmBtn.style.cssText =
+      "padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; background: #DC2626; color: #fff; border: none; font-family: inherit; transition: background 150ms; display: flex; align-items: center; justify-content: center;";
     confirmBtn.textContent = getString("chat-dialog-confirm");
 
     cancelBtn.addEventListener("mouseenter", () => {
@@ -900,29 +997,42 @@ ${truncatedContent}`;
 
     // 方法1: Zotero.Utilities.Internal.copyTextToClipboard
     try {
-      ztoolkit.log("[Copy] Trying Zotero.Utilities.Internal.copyTextToClipboard");
+      ztoolkit.log(
+        "[Copy] Trying Zotero.Utilities.Internal.copyTextToClipboard",
+      );
       ztoolkit.log("[Copy] Zotero.Utilities:", typeof Zotero.Utilities);
-      ztoolkit.log("[Copy] Zotero.Utilities.Internal:", typeof (Zotero.Utilities as any).Internal);
-      ztoolkit.log("[Copy] copyTextToClipboard:", typeof (Zotero.Utilities as any).Internal?.copyTextToClipboard);
+      ztoolkit.log(
+        "[Copy] Zotero.Utilities.Internal:",
+        typeof (Zotero.Utilities as any).Internal,
+      );
+      ztoolkit.log(
+        "[Copy] copyTextToClipboard:",
+        typeof (Zotero.Utilities as any).Internal?.copyTextToClipboard,
+      );
 
       if ((Zotero.Utilities as any).Internal?.copyTextToClipboard) {
         (Zotero.Utilities as any).Internal.copyTextToClipboard(text);
-        ztoolkit.log("[Copy] Zotero.Utilities.Internal.copyTextToClipboard succeeded");
+        ztoolkit.log(
+          "[Copy] Zotero.Utilities.Internal.copyTextToClipboard succeeded",
+        );
         this.showToast("Copied!");
         return;
       } else {
         ztoolkit.log("[Copy] copyTextToClipboard not available");
       }
     } catch (error) {
-      ztoolkit.log("[Copy] Zotero.Utilities.Internal.copyTextToClipboard failed:", error);
+      ztoolkit.log(
+        "[Copy] Zotero.Utilities.Internal.copyTextToClipboard failed:",
+        error,
+      );
     }
 
     // 方法2: nsIClipboardHelper
     try {
       ztoolkit.log("[Copy] Trying nsIClipboardHelper");
-      const clipboardService = (Components.classes as any)["@mozilla.org/widget/clipboardhelper;1"]?.getService(
-        (Components.interfaces as any).nsIClipboardHelper
-      );
+      const clipboardService = (Components.classes as any)[
+        "@mozilla.org/widget/clipboardhelper;1"
+      ]?.getService((Components.interfaces as any).nsIClipboardHelper);
       ztoolkit.log("[Copy] clipboardService:", clipboardService);
 
       if (clipboardService) {
@@ -1018,11 +1128,17 @@ ${truncatedContent}`;
   }
 
   // 复制单条消息（添加到消息元素上）
-  private addCopyButtonToMessage(messageEl: HTMLElement, _content: string, _role: string) {
+  private addCopyButtonToMessage(
+    messageEl: HTMLElement,
+    _content: string,
+    _role: string,
+  ) {
     const doc = messageEl.ownerDocument;
     if (!doc) return;
 
-    const contentDiv = messageEl.querySelector(".marginalia-message-content") as HTMLElement;
+    const contentDiv = messageEl.querySelector(
+      ".marginalia-message-content",
+    ) as HTMLElement;
     if (!contentDiv) return;
 
     contentDiv.style.position = "relative";
@@ -1070,5 +1186,4 @@ ${truncatedContent}`;
 
     contentDiv.appendChild(copyBtn);
   }
-
 }

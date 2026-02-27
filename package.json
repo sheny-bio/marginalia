@@ -1,7 +1,7 @@
 {
   "name": "zotero-plugin-template",
   "type": "module",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "description": "Zotero AI 聊天助手，支持与论文和批注进行智能对话",
   "config": {
     "addonName": "Marginalia AI Chat",

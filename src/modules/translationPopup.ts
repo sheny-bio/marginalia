@@ -42,7 +42,8 @@ export class TranslationPopup {
     if (!selectedText?.trim()) return;
 
     const container = doc.createElement("div");
-    container.style.cssText = "display: flex; flex-direction: row; gap: 4px; padding: 2px 0;";
+    container.style.cssText =
+      "display: flex; flex-direction: row; gap: 4px; padding: 2px 0;";
 
     const btnStyle = `
       display: inline-flex; align-items: center;
@@ -88,7 +89,8 @@ export class TranslationPopup {
 
     // 翻译结果容器（按钮行下方）
     const resultContainer = doc.createElement("div");
-    resultContainer.style.cssText = "display: flex; flex-direction: column; gap: 4px;";
+    resultContainer.style.cssText =
+      "display: flex; flex-direction: column; gap: 4px;";
     append(resultContainer);
 
     // 翻译按钮点击

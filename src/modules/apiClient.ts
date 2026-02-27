@@ -88,7 +88,6 @@ export class APIClient {
     let fullText = "";
     let buffer = "";
 
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const { done, value } = await (
         reader as ReadableStreamDefaultReader<Uint8Array>

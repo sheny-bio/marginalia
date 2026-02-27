@@ -24,7 +24,11 @@ export class StorageManager {
   }
 
   async saveMessage(itemID: number, role: string, content: string) {
-    ztoolkit.log("[StorageManager] Saving message:", { itemID, role, contentLength: content.length });
+    ztoolkit.log("[StorageManager] Saving message:", {
+      itemID,
+      role,
+      contentLength: content.length,
+    });
 
     const filePath = this.getConversationFilePath(itemID);
     let messages: any[] = [];
@@ -56,7 +60,9 @@ export class StorageManager {
     }
   }
 
-  async getMessages(itemID: number): Promise<Array<{ role: string; content: string }>> {
+  async getMessages(
+    itemID: number,
+  ): Promise<Array<{ role: string; content: string }>> {
     ztoolkit.log("[StorageManager] Loading messages for itemID:", itemID);
 
     const filePath = this.getConversationFilePath(itemID);
@@ -65,7 +71,12 @@ export class StorageManager {
       if (await IOUtils.exists(filePath)) {
         const data = await IOUtils.readUTF8(filePath);
         const messages = JSON.parse(data);
-        ztoolkit.log("[StorageManager] Loaded", messages.length, "messages from:", filePath);
+        ztoolkit.log(
+          "[StorageManager] Loaded",
+          messages.length,
+          "messages from:",
+          filePath,
+        );
         return messages.map((msg: any) => ({
           role: msg.role,
           content: msg.content,

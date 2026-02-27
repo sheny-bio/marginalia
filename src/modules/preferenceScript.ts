@@ -42,10 +42,18 @@ function bindPrefEvents() {
 }
 
 async function testAPIConnection(window: Window) {
-  const testBtn = window.document?.querySelector("#marginalia-test-connection") as HTMLButtonElement;
-  const apiUrlInput = window.document?.querySelector("#marginalia-apiUrl") as HTMLInputElement;
-  const apiKeyInput = window.document?.querySelector("#marginalia-apiKey") as HTMLInputElement;
-  const modelInput = window.document?.querySelector("#marginalia-model") as HTMLInputElement;
+  const testBtn = window.document?.querySelector(
+    "#marginalia-test-connection",
+  ) as HTMLButtonElement;
+  const apiUrlInput = window.document?.querySelector(
+    "#marginalia-apiUrl",
+  ) as HTMLInputElement;
+  const apiKeyInput = window.document?.querySelector(
+    "#marginalia-apiKey",
+  ) as HTMLInputElement;
+  const modelInput = window.document?.querySelector(
+    "#marginalia-model",
+  ) as HTMLInputElement;
 
   const url = apiUrlInput?.value || "";
   const apiKey = apiKeyInput?.value || "";
@@ -56,7 +64,8 @@ async function testAPIConnection(window: Window) {
     return;
   }
 
-  const originalLabel = testBtn?.getAttribute("label") || getString("pref-test-connection-label");
+  const originalLabel =
+    testBtn?.getAttribute("label") || getString("pref-test-connection-label");
   testBtn?.setAttribute("label", getString("pref-test-connection-testing"));
   testBtn?.setAttribute("disabled", "true");
 
@@ -70,7 +79,11 @@ async function testAPIConnection(window: Window) {
       window.alert(getString("pref-test-connection-failed"));
     }
   } catch (error) {
-    window.alert(getString("pref-test-connection-error", { args: { error: String(error) } }));
+    window.alert(
+      getString("pref-test-connection-error", {
+        args: { error: String(error) },
+      }),
+    );
   } finally {
     testBtn?.setAttribute("label", originalLabel);
     testBtn?.removeAttribute("disabled");
@@ -81,9 +94,15 @@ async function saveSettings(window: Window) {
   const storageManager = new StorageManager();
   const settingsManager = new SettingsManager(storageManager);
 
-  const apiUrlInput = window.document?.querySelector("#marginalia-apiUrl") as HTMLInputElement;
-  const apiKeyInput = window.document?.querySelector("#marginalia-apiKey") as HTMLInputElement;
-  const modelInput = window.document?.querySelector("#marginalia-model") as HTMLInputElement;
+  const apiUrlInput = window.document?.querySelector(
+    "#marginalia-apiUrl",
+  ) as HTMLInputElement;
+  const apiKeyInput = window.document?.querySelector(
+    "#marginalia-apiKey",
+  ) as HTMLInputElement;
+  const modelInput = window.document?.querySelector(
+    "#marginalia-model",
+  ) as HTMLInputElement;
 
   const url = apiUrlInput?.value || "";
   const apiKey = apiKeyInput?.value || "";
@@ -98,6 +117,8 @@ async function saveSettings(window: Window) {
     await settingsManager.setAPIConfig(url, apiKey, model);
     window.alert(getString("pref-save-success"));
   } catch (error) {
-    window.alert(getString("pref-save-failed", { args: { error: String(error) } }));
+    window.alert(
+      getString("pref-save-failed", { args: { error: String(error) } }),
+    );
   }
 }

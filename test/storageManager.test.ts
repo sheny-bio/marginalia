@@ -45,9 +45,14 @@ describe("StorageManager", function () {
 
     it("should save message with tool calls", async function () {
       const toolCalls = [
-        { name: "get_paper_info", arguments: { itemID: 123 } }
+        { name: "get_paper_info", arguments: { itemID: 123 } },
       ];
-      await storage.saveMessage(testItemID, "assistant", "Using tool", toolCalls);
+      await storage.saveMessage(
+        testItemID,
+        "assistant",
+        "Using tool",
+        toolCalls,
+      );
 
       const messages = await storage.getMessages(testItemID);
 

@@ -35,8 +35,13 @@ export class ZoteroAPI {
           // 方法1: 尝试从全文索引获取
           try {
             ztoolkit.log("[ZoteroAPI] Trying Zotero.Fulltext.getItemContent");
-            const content = await (Zotero.Fulltext as any).getItemContent(attachmentID);
-            ztoolkit.log("[ZoteroAPI] getItemContent result:", content ? "got content" : "no content");
+            const content = await (Zotero.Fulltext as any).getItemContent(
+              attachmentID,
+            );
+            ztoolkit.log(
+              "[ZoteroAPI] getItemContent result:",
+              content ? "got content" : "no content",
+            );
             if (content && content.content) {
               return content.content;
             }
@@ -51,7 +56,10 @@ export class ZoteroAPI {
             ztoolkit.log("[ZoteroAPI] Cache file:", cacheFile?.path);
             if (cacheFile && (await cacheFile.exists())) {
               const text = await Zotero.File.getContentsAsync(cacheFile);
-              ztoolkit.log("[ZoteroAPI] Cache file content length:", typeof text === 'string' ? text.length : 'N/A');
+              ztoolkit.log(
+                "[ZoteroAPI] Cache file content length:",
+                typeof text === "string" ? text.length : "N/A",
+              );
               if (text) {
                 return text as string;
               }
@@ -64,7 +72,9 @@ export class ZoteroAPI {
           try {
             ztoolkit.log("[ZoteroAPI] Trying to index and get content");
             await Zotero.Fulltext.indexItems([attachmentID]);
-            const content = await (Zotero.Fulltext as any).getItemContent(attachmentID);
+            const content = await (Zotero.Fulltext as any).getItemContent(
+              attachmentID,
+            );
             if (content && content.content) {
               return content.content;
             }

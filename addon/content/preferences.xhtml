@@ -8,36 +8,51 @@
   <html:fieldset>
     <html:legend data-l10n-id="pref-api-config"></html:legend>
     <hbox align="center">
-      <html:label for="marginalia-apiUrl" style="width: 120px;" data-l10n-id="pref-api-url"></html:label>
+      <html:label
+        for="marginalia-apiUrl"
+        style="width: 120px"
+        data-l10n-id="pref-api-url"
+      ></html:label>
       <html:input
         type="text"
         id="marginalia-apiUrl"
         preference="extensions.zotero.marginalia.apiUrl"
-        style="flex: 1; min-width: 400px;"
+        style="flex: 1; min-width: 400px"
         data-l10n-id="pref-api-url-input"
       />
     </hbox>
     <hbox align="center">
-      <html:label for="marginalia-apiKey" style="width: 120px;" data-l10n-id="pref-api-key"></html:label>
+      <html:label
+        for="marginalia-apiKey"
+        style="width: 120px"
+        data-l10n-id="pref-api-key"
+      ></html:label>
       <html:input
         type="password"
         id="marginalia-apiKey"
         preference="extensions.zotero.marginalia.apiKey"
-        style="flex: 1; min-width: 400px;"
+        style="flex: 1; min-width: 400px"
       />
     </hbox>
     <hbox align="center">
-      <html:label for="marginalia-model" style="width: 120px;" data-l10n-id="pref-model"></html:label>
+      <html:label
+        for="marginalia-model"
+        style="width: 120px"
+        data-l10n-id="pref-model"
+      ></html:label>
       <html:input
         type="text"
         id="marginalia-model"
         preference="extensions.zotero.marginalia.model"
-        style="flex: 1; min-width: 400px;"
+        style="flex: 1; min-width: 400px"
         data-l10n-id="pref-model-input"
       />
     </hbox>
-    <hbox style="gap: 12px;">
-      <button id="marginalia-test-connection" data-l10n-id="pref-test-connection" />
+    <hbox style="gap: 12px">
+      <button
+        id="marginalia-test-connection"
+        data-l10n-id="pref-test-connection"
+      />
       <button id="marginalia-save-settings" data-l10n-id="pref-save" />
     </hbox>
   </html:fieldset>
@@ -46,7 +61,11 @@
   <html:fieldset>
     <html:legend data-l10n-id="pref-chat-settings"></html:legend>
     <hbox align="center">
-      <html:label for="marginalia-maxHistoryRounds" style="width: 130px;" data-l10n-id="pref-max-history-rounds"></html:label>
+      <html:label
+        for="marginalia-maxHistoryRounds"
+        style="width: 130px"
+        data-l10n-id="pref-max-history-rounds"
+      ></html:label>
       <html:input
         type="number"
         id="marginalia-maxHistoryRounds"
@@ -54,15 +73,27 @@
         min="1"
         max="100"
         value="20"
-        style="width: 60px;"
+        style="width: 60px"
       />
     </hbox>
     <hbox align="start">
-      <html:label for="marginalia-systemPrompt" style="width: 120px; margin-top: 8px;" data-l10n-id="pref-system-prompt"></html:label>
+      <html:label
+        for="marginalia-systemPrompt"
+        style="width: 120px; margin-top: 8px"
+        data-l10n-id="pref-system-prompt"
+      ></html:label>
       <html:textarea
         id="marginalia-systemPrompt"
         preference="extensions.zotero.marginalia.systemPrompt"
-        style="flex: 1; height: 100px; padding: 8px; border: 1px solid #D1D1D6; border-radius: 4px; font-family: monospace; font-size: 12px;"
+        style="
+          flex: 1;
+          height: 100px;
+          padding: 8px;
+          border: 1px solid #d1d1d6;
+          border-radius: 4px;
+          font-family: monospace;
+          font-size: 12px;
+        "
         data-l10n-id="pref-system-prompt-input"
       ></html:textarea>
     </hbox>
