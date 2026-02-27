@@ -451,7 +451,7 @@ export class ChatPanel {
           to { transform: rotate(360deg); }
         }
       `;
-      doc.head?.appendChild(style);
+      (doc.head || doc.documentElement)?.appendChild(style);
     }
 
     messagesDiv.appendChild(messageEl);
