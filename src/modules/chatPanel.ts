@@ -20,7 +20,6 @@ export class ChatPanel {
   private storageManager: StorageManager;
   private settingsManager: SettingsManager;
   private messages: StoredMessage[] = [];
-  private dropdownVisible: boolean = false;
   private currentItem: any = null;
   private quotes: string[] = [];
 
@@ -77,6 +76,59 @@ export class ChatPanel {
           inputArea.className = "marginalia-input-area";
           inputArea.style.cssText = "flex-shrink: 0; padding: 16px; background: #fff; border-top: 1px solid #e5e5e5;";
 
+          // 创建工具栏
+          const toolbar = doc.createElement("div");
+          toolbar.className = "marginalia-toolbar";
+          toolbar.style.cssText = "display: flex; align-items: center; gap: 4px; padding: 0 0 8px 0;";
+
+          // 导出按钮
+          const exportBtn = doc.createElement("button");
+          exportBtn.className = "marginalia-toolbar-btn";
+          exportBtn.title = getString("chat-menu-export");
+          exportBtn.style.cssText = "display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: none; border: 1px solid transparent; border-radius: 6px; cursor: pointer; color: #9CA3AF; transition: all 0.15s; padding: 0;";
+          exportBtn.appendChild(this.createSvgIcon(doc, [
+            { tag: "path", attrs: { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" } },
+            { tag: "polyline", attrs: { points: "14 2 14 8 20 8" } },
+            { tag: "line", attrs: { x1: "16", y1: "13", x2: "8", y2: "13" } },
+            { tag: "line", attrs: { x1: "16", y1: "17", x2: "8", y2: "17" } },
+            { tag: "polyline", attrs: { points: "10 9 9 9 8 9" } },
+          ]));
+          exportBtn.addEventListener("mouseenter", () => {
+            exportBtn.style.background = "#F5F5F5";
+            exportBtn.style.borderColor = "#e5e5e5";
+            exportBtn.style.color = "#171717";
+          });
+          exportBtn.addEventListener("mouseleave", () => {
+            exportBtn.style.background = "none";
+            exportBtn.style.borderColor = "transparent";
+            exportBtn.style.color = "#9CA3AF";
+          });
+          exportBtn.addEventListener("click", () => this.exportAsMarkdown());
+
+          // 清除按钮
+          const clearBtn = doc.createElement("button");
+          clearBtn.className = "marginalia-toolbar-btn";
+          clearBtn.title = getString("chat-menu-clear");
+          clearBtn.style.cssText = "display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: none; border: 1px solid transparent; border-radius: 6px; cursor: pointer; color: #9CA3AF; transition: all 0.15s; padding: 0;";
+          clearBtn.appendChild(this.createSvgIcon(doc, [
+            { tag: "polyline", attrs: { points: "3 6 5 6 21 6" } },
+            { tag: "path", attrs: { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" } },
+          ]));
+          clearBtn.addEventListener("mouseenter", () => {
+            clearBtn.style.background = "#FEF2F2";
+            clearBtn.style.borderColor = "#FECACA";
+            clearBtn.style.color = "#DC2626";
+          });
+          clearBtn.addEventListener("mouseleave", () => {
+            clearBtn.style.background = "none";
+            clearBtn.style.borderColor = "transparent";
+            clearBtn.style.color = "#9CA3AF";
+          });
+          clearBtn.addEventListener("click", () => this.showClearConfirmDialog());
+
+          toolbar.appendChild(exportBtn);
+          toolbar.appendChild(clearBtn);
+
           // 创建输入容器
           const inputContainer = doc.createElement("div");
           inputContainer.className = "marginalia-input-container";
@@ -108,16 +160,6 @@ export class ChatPanel {
             inputContainer.style.boxShadow = "none";
           });
 
-          // 创建按钮容器
-          const actionsDiv = doc.createElement("div");
-          actionsDiv.className = "marginalia-input-actions";
-          actionsDiv.style.cssText = "display: flex; align-items: center; gap: 8px; flex-shrink: 0;";
-
-          // 创建选项按钮包装器
-          const optionsWrapper = doc.createElement("div");
-          optionsWrapper.className = "marginalia-options-wrapper";
-          optionsWrapper.style.cssText = "position: relative;";
-
           // 创建发送按钮
           const sendBtn = doc.createElement("button");
           sendBtn.id = "marginalia-send";
@@ -129,23 +171,6 @@ export class ChatPanel {
           sendBtn.addEventListener("mouseleave", () => {
             sendBtn.style.background = "#171717";
           });
-
-          // 创建选项按钮
-          const optionsBtn = doc.createElement("button");
-          optionsBtn.id = "marginalia-options";
-          optionsBtn.textContent = "+";
-          optionsBtn.style.cssText = "display: flex; align-items: center; justify-content: center; padding: 8px 12px; background: #f5f5f5; color: #171717; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 14px; flex-shrink: 0;";
-          optionsBtn.addEventListener("mouseenter", () => {
-            optionsBtn.style.background = "#e5e5e5";
-          });
-          optionsBtn.addEventListener("mouseleave", () => {
-            optionsBtn.style.background = "#f5f5f5";
-          });
-
-          // 创建下拉菜单
-          const dropdown = this.createDropdownMenu(doc);
-          optionsWrapper.appendChild(optionsBtn);
-          optionsWrapper.appendChild(dropdown);
 
           // 直接绑定事件监听器
           sendBtn.addEventListener("click", () => {
@@ -160,22 +185,10 @@ export class ChatPanel {
             }
           });
 
-          // 选项按钮点击事件
-          optionsBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            this.toggleDropdown();
-          });
-
-          // 点击其他地方关闭下拉菜单
-          doc.addEventListener("click", () => {
-            this.hideDropdown();
-          });
-
           // 组装 DOM
-          actionsDiv.appendChild(optionsWrapper);
-          actionsDiv.appendChild(sendBtn);
           inputContainer.appendChild(textarea);
-          inputContainer.appendChild(actionsDiv);
+          inputContainer.appendChild(sendBtn);
+          inputArea.appendChild(toolbar);
           inputArea.appendChild(inputContainer);
           container.appendChild(messagesDiv);
           container.appendChild(inputArea);
@@ -706,6 +719,27 @@ ${paperContent}`;
     }
   }
 
+  private createSvgIcon(doc: Document, children: { tag: string; attrs: Record<string, string> }[]): SVGSVGElement {
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = doc.createElementNS(NS, "svg") as unknown as SVGSVGElement;
+    svg.setAttribute("width", "16");
+    svg.setAttribute("height", "16");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    for (const child of children) {
+      const el = doc.createElementNS(NS, child.tag);
+      for (const [key, value] of Object.entries(child.attrs)) {
+        el.setAttribute(key, value);
+      }
+      svg.appendChild(el);
+    }
+    return svg;
+  }
+
   private escapeHtml(text: string): string {
     // 手动转义 HTML 特殊字符
     return text
@@ -716,103 +750,7 @@ ${paperContent}`;
       .replace(/'/g, "&#039;");
   }
 
-  // ========== Phase 4: 对话管理功能 ==========
-
-  private createDropdownMenu(doc: Document): HTMLElement {
-    const dropdown = doc.createElement("div");
-    dropdown.id = "marginalia-dropdown";
-    dropdown.className = "marginalia-dropdown";
-    dropdown.style.cssText = `
-      position: absolute;
-      bottom: 100%;
-      right: 0;
-      margin-bottom: 8px;
-      background: #fff;
-      border: 1px solid #e5e5e5;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      min-width: 180px;
-      overflow: hidden;
-      z-index: 1000;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(8px);
-      transition: opacity 0.2s, visibility 0.2s, transform 0.2s;
-    `;
-
-    const menuItems = [
-      { id: "export-md", icon: "📄", label: getString("chat-menu-export"), action: () => this.exportAsMarkdown() },
-      { id: "divider", type: "divider" },
-      { id: "clear-history", icon: "🗑️", label: getString("chat-menu-clear"), danger: true, action: () => this.showClearConfirmDialog() },
-    ];
-
-    for (const item of menuItems) {
-      if (item.type === "divider") {
-        const divider = doc.createElement("div");
-        divider.className = "marginalia-dropdown-divider";
-        divider.style.cssText = "height: 1px; background: #e5e5e5; margin: 4px 0;";
-        dropdown.appendChild(divider);
-      } else {
-        const menuItem = doc.createElement("button");
-        menuItem.className = `marginalia-dropdown-item${item.danger ? " danger" : ""}`;
-        menuItem.style.cssText = `
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 12px 16px;
-          font-size: 14px;
-          color: ${item.danger ? "#DC2626" : "#171717"};
-          cursor: pointer;
-          border: none;
-          background: none;
-          width: 100%;
-          text-align: left;
-          font-family: inherit;
-        `;
-        menuItem.innerHTML = `<span>${item.icon}</span><span>${item.label}</span>`;
-        menuItem.addEventListener("click", (e) => {
-          e.stopPropagation();
-          this.hideDropdown();
-          item.action?.();
-        });
-        menuItem.addEventListener("mouseenter", () => {
-          menuItem.style.background = item.danger ? "#FEF2F2" : "#F5F5F5";
-        });
-        menuItem.addEventListener("mouseleave", () => {
-          menuItem.style.background = "none";
-        });
-        dropdown.appendChild(menuItem);
-      }
-    }
-
-    return dropdown;
-  }
-
-  private toggleDropdown() {
-    const dropdown = this.container?.querySelector("#marginalia-dropdown") as HTMLElement;
-    if (!dropdown) return;
-
-    this.dropdownVisible = !this.dropdownVisible;
-    if (this.dropdownVisible) {
-      dropdown.style.opacity = "1";
-      dropdown.style.visibility = "visible";
-      dropdown.style.transform = "translateY(0)";
-    } else {
-      dropdown.style.opacity = "0";
-      dropdown.style.visibility = "hidden";
-      dropdown.style.transform = "translateY(8px)";
-    }
-  }
-
-  private hideDropdown() {
-    const dropdown = this.container?.querySelector("#marginalia-dropdown") as HTMLElement;
-    if (!dropdown) return;
-
-    this.dropdownVisible = false;
-    dropdown.style.opacity = "0";
-    dropdown.style.visibility = "hidden";
-    dropdown.style.transform = "translateY(8px)";
-  }
+  // ========== 对话管理功能 ==========
 
   private async exportAsMarkdown() {
     const markdown = this.generateMarkdownContent();
