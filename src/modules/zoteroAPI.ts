@@ -13,11 +13,11 @@ export class ZoteroAPI {
     };
   }
 
-  static async getPaperContent(itemID: number): Promise<string> {
+  static async getPaperContent(itemID: number): Promise<string | null> {
     try {
       const item = Zotero.Items.get(itemID);
       if (!item) {
-        return "Item not found.";
+        return null;
       }
 
       // 获取 PDF 附件
@@ -74,10 +74,10 @@ export class ZoteroAPI {
         }
       }
 
-      return "Unable to retrieve paper content. Please ensure the PDF has been indexed (Edit > Preferences > Search > Rebuild Index).";
+      return null;
     } catch (error) {
       ztoolkit.log("[ZoteroAPI] Error:", error);
-      return `Error retrieving content: ${error}`;
+      return null;
     }
   }
 

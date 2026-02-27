@@ -11,6 +11,7 @@ chat-input-placeholder = Ask about this paper...
 chat-send-button = Send
 chat-thinking = Thinking...
 chat-error-title = Something went wrong
+chat-no-pdf-content = Unable to read the PDF content. Please ensure this item has a PDF attachment and it has been indexed (Edit > Preferences > Search > Rebuild Index).
 chat-welcome-title = Marginalia
 chat-welcome-subtitle = Your AI research assistant
 chat-suggestion-summarize = Summarize this paper

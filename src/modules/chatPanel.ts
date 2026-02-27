@@ -493,17 +493,14 @@ export class ChatPanel {
     const paperInfo = ZoteroAPI.getPaperInfo(this.currentItemID!);
     const systemPrompt = await this.settingsManager.getSystemPrompt();
     // 获取论文全文内容
-    let paperContent = "";
-    try {
-      paperContent = await ZoteroAPI.getPaperContent(this.currentItemID!);
-      // 限制全文长度，避免超出 token 限制
-      if (paperContent.length > 50000) {
-        paperContent = paperContent.substring(0, 50000) + "\n\n[Content truncated due to length...]";
-      }
-    } catch (error) {
-      ztoolkit.log("Error getting paper content:", error);
-      paperContent = "Unable to retrieve paper content.";
+    const paperContent = await ZoteroAPI.getPaperContent(this.currentItemID!);
+    if (!paperContent) {
+      throw new Error(getString("chat-no-pdf-content"));
     }
+    // 限制全文长度，避免超出 token 限制
+    const truncatedContent = paperContent.length > 50000
+      ? paperContent.substring(0, 50000) + "\n\n[Content truncated due to length...]"
+      : paperContent;
 
     let systemMessage = `${systemPrompt}
 
@@ -514,7 +511,7 @@ export class ChatPanel {
 - 摘要：${paperInfo?.abstract || "暂无摘要"}
 
 论文全文内容：
-${paperContent}`;
+${truncatedContent}`;
 
     if (this.quotes.length > 0) {
       systemMessage += `\n\n用户引用了论文中的以下段落：\n`;

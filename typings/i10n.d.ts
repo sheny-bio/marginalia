@@ -15,6 +15,7 @@ export type FluentMessageId =
   | 'chat-menu-clear'
   | 'chat-menu-copy-all'
   | 'chat-menu-export'
+  | 'chat-no-pdf-content'
   | 'chat-send-button'
   | 'chat-sidenav'
   | 'chat-suggestion-contributions'

@@ -11,6 +11,7 @@ chat-input-placeholder = 询问关于这篇论文的问题...
 chat-send-button = 发送
 chat-thinking = 思考中...
 chat-error-title = 出错了
+chat-no-pdf-content = 无法读取论文 PDF 内容。请确保该条目有 PDF 附件，且已完成全文索引（编辑 > 设置 > 搜索 > 重建索引）。
 chat-welcome-title = Marginalia
 chat-welcome-subtitle = 你的 AI 研究助手
 chat-suggestion-summarize = 总结这篇论文
