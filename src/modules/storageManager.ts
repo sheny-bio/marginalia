@@ -107,12 +107,10 @@ export class StorageManager {
     try {
       if (await IOUtils.exists(filePath)) {
         const data = await IOUtils.readUTF8(filePath);
-        let messages = JSON.parse(data);
-        if (messages.length > count) {
-          messages = messages.slice(count);
-          await IOUtils.writeUTF8(filePath, JSON.stringify(messages, null, 2));
-          ztoolkit.log("[StorageManager] Deleted oldest", count, "messages");
-        }
+        const messages = JSON.parse(data);
+        const remaining = messages.slice(count);
+        await IOUtils.writeUTF8(filePath, JSON.stringify(remaining, null, 2));
+        ztoolkit.log("[StorageManager] Deleted oldest", count, "messages");
       }
     } catch (error) {
       ztoolkit.log("[StorageManager] Error deleting oldest messages:", error);
