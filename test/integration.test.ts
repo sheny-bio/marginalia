@@ -25,10 +25,10 @@ describe("Integration Tests", function () {
       const addon = Zotero[config.addonInstance];
       const settingsManager = addon.data.settingsManager;
 
-      const config = await settingsManager.getAPIConfig();
-      assert.isDefined(config);
-      assert.isDefined(config.url);
-      assert.isDefined(config.model);
+      const apiConfig = await settingsManager.getAPIConfig();
+      assert.isDefined(apiConfig);
+      assert.isDefined(apiConfig.url);
+      assert.isDefined(apiConfig.model);
     });
 
     it("should be able to get max history rounds", async function () {

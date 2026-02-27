@@ -1,13 +1,14 @@
 import { assert } from "chai";
-import { StorageManager } from "../src/modules/storageManager";
+import { config } from "../package.json";
 
 describe("StorageManager", function () {
-  let storage: StorageManager;
+  let storage: any;
   const testItemID = 999999; // Use a high ID unlikely to conflict
 
-  before(async function () {
-    storage = new StorageManager();
-    await storage.init();
+  before(function () {
+    const addon = Zotero[config.addonInstance];
+    storage = addon.data.storageManager;
+    assert.isDefined(storage, "storageManager should be initialized");
   });
 
   beforeEach(async function () {
