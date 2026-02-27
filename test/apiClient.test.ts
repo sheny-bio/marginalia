@@ -115,6 +115,7 @@ describe("APIClient", function () {
 
   describe("Error handling", function () {
     it("should handle invalid API key gracefully in testConnection", async function () {
+      this.timeout(15000);
       const config: APIConfig = {
         url: "https://api.openai.com/v1",
         apiKey: "invalid-key",

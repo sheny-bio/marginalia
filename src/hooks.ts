@@ -23,6 +23,8 @@ async function onStartup() {
 
   initLocale();
   await storageManager.init();
+  addon.data.storageManager = storageManager;
+  addon.data.settingsManager = settingsManager;
 
   registerPrefsPane();
 

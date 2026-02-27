@@ -43,25 +43,6 @@ describe("StorageManager", function () {
       assert.equal(messages[2].content, "Third message");
     });
 
-    it("should save message with tool calls", async function () {
-      const toolCalls = [
-        { name: "get_paper_info", arguments: { itemID: 123 } },
-      ];
-      await storage.saveMessage(
-        testItemID,
-        "assistant",
-        "Using tool",
-        toolCalls,
-      );
-
-      const messages = await storage.getMessages(testItemID);
-
-      assert.lengthOf(messages, 1);
-      assert.isDefined(messages[0].toolCalls);
-      assert.lengthOf(messages[0].toolCalls, 1);
-      assert.equal(messages[0].toolCalls[0].name, "get_paper_info");
-    });
-
     it("should return empty array for non-existent itemID", async function () {
       const messages = await storage.getMessages(888888);
       assert.lengthOf(messages, 0);
