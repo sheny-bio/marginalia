@@ -75,7 +75,7 @@ export class ChatPanel {
           messagesDiv.id = "marginalia-messages";
           messagesDiv.className = "marginalia-messages";
           messagesDiv.style.cssText =
-            "flex: 1; overflow-y: auto; min-height: 200px; padding: 12px;";
+            "flex: 1; overflow-y: auto; min-height: 200px; max-height: 500px; padding: 12px;";
 
           // 创建输入区域
           const inputArea = doc.createElement("div");
