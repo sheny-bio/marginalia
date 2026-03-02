@@ -57,6 +57,20 @@ addon/
 - **对话存储**：JSON 文件存储在 `{Zotero数据目录}/marginalia/conversation_{itemID}.json`
 - **引用机制**：引用内容在 system message 中作为独立区块，与全文和用户问题分离
 
+## 发布流程规范
+
+发布新版本前必须按顺序完成以下步骤，否则会导致 CI 失败：
+
+1. **升级版本号**：修改 `package.json` 中的 `version` 字段（如 `3.2.1` → `3.2.2`）
+2. **运行 lint**：`npm run lint`，确保无代码规范错误
+3. **运行测试**：`npm test`，确保所有测试通过
+4. **提交版本升级**：`git commit -m "chore: bump version to x.x.x"`
+5. **推送触发 CI**：`git push origin main`
+
+**注意**：`manifest.json` 中的版本是 `__buildVersion__` 占位符，由构建工具自动替换，无需手动修改。
+
+**常见错误**：`already_exists` 表示 GitHub 上已存在该 tag 的 release，需要先升级版本号。
+
 ## Zotero 接口查询规范
 
 每次开发新功能前，必须先阅读 `node_modules/zotero-types` 目录下的类型定义文件，查询是否有合适的 Zotero 内置接口可以快速完成需求，避免重复造轮子。
