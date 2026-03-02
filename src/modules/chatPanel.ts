@@ -1,4 +1,4 @@
-import { APIClient, Message } from "./apiClient";
+import { APIClient, Message, ToolDefinition } from "./apiClient";
 import { StorageManager } from "./storageManager";
 import { SettingsManager } from "./settingsManager";
 import { ZoteroAPI } from "./zoteroAPI";
@@ -693,6 +693,7 @@ export class ChatPanel {
     messageEl.style.cssText = "display: flex; justify-content: flex-start;";
 
     const contentDiv = doc.createElement("div");
+    contentDiv.id = "marginalia-loading-content";
     contentDiv.className = "marginalia-message-content";
     contentDiv.style.cssText =
       "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; display: flex; align-items: center; gap: 10px;";
@@ -704,6 +705,7 @@ export class ChatPanel {
         border-top-color: #D4AF37;
         border-radius: 50%;
         animation: marginalia-spin 0.8s linear infinite;
+        flex-shrink: 0;
       "></div>
       <span style="color: #6B7280;">${getString("chat-thinking")}</span>
     `;
@@ -729,6 +731,106 @@ export class ChatPanel {
   private removeLoading() {
     const loading = this.container?.querySelector("#marginalia-loading");
     loading?.remove();
+  }
+
+  /**
+   * 更新加载气泡中的状态文字，用于展示工具调用进度。
+   */
+  private updateLoadingStatus(status: string) {
+    const contentDiv = this.container?.querySelector(
+      "#marginalia-loading-content",
+    ) as HTMLElement | null;
+    if (!contentDiv) return;
+
+    contentDiv.innerHTML = `
+      <div class="marginalia-spinner" style="
+        width: 18px; height: 18px;
+        border: 2px solid #E5E5E5;
+        border-top-color: #D4AF37;
+        border-radius: 50%;
+        animation: marginalia-spin 0.8s linear infinite;
+        flex-shrink: 0;
+      "></div>
+      <span style="color: #6B7280; font-size: 13px;">${this.escapeHtml(status)}</span>
+    `;
+    this.scrollToBottom();
+  }
+
+  /**
+   * 返回所有注册的工具定义。
+   */
+  private getTools(): ToolDefinition[] {
+    return [
+      {
+        type: "function",
+        function: {
+          name: "get_paper_content",
+          description:
+            "根据文献标题在Zotero数据库中搜索文献，并返回其全文内容。" +
+            "当用户询问除当前阅读论文之外的其他文献的详细内容、方法、结论等信息时，使用此工具获取相关文献的全文。",
+          parameters: {
+            type: "object",
+            properties: {
+              title: {
+                type: "string",
+                description: "要查询的文献标题或标题关键词",
+              },
+            },
+            required: ["title"],
+          },
+        },
+      },
+    ];
+  }
+
+  /**
+   * 执行工具调用，返回工具结果字符串。
+   */
+  private async executeToolCall(
+    toolName: string,
+    toolArgs: Record<string, unknown>,
+  ): Promise<string> {
+    ztoolkit.log("[ChatPanel] Executing tool:", toolName, "args:", toolArgs);
+
+    if (toolName === "get_paper_content") {
+      const title = toolArgs.title as string | undefined;
+      if (!title) {
+        return "错误：缺少文献标题参数（title）";
+      }
+
+      this.updateLoadingStatus(`📄 正在搜索文献: "${title}"...`);
+      const results = await ZoteroAPI.searchPapers(title, 5);
+
+      if (!results || results.length === 0) {
+        return `未找到标题包含"${title}"的文献，请尝试使用不同的关键词。`;
+      }
+
+      const bestMatch = results[0];
+      if (!bestMatch) {
+        return `未找到标题包含"${title}"的文献。`;
+      }
+
+      this.updateLoadingStatus(
+        `📖 正在提取文献全文: "${bestMatch.title}"...`,
+      );
+
+      const content = await ZoteroAPI.getPaperContent(bestMatch.id);
+      if (!content) {
+        return (
+          `找到文献《${bestMatch.title}》，但无法获取其全文内容。` +
+          `（可能原因：未导入PDF附件，或PDF尚未建立全文索引）`
+        );
+      }
+
+      const truncated =
+        content.length > 30000
+          ? content.substring(0, 30000) + "\n\n[内容因长度限制被截断...]"
+          : content;
+
+      return `文献《${bestMatch.title}》全文内容：\n\n${truncated}`;
+    }
+
+    return `未知工具: ${toolName}`;
   }
 
   private async callAPI(userMessage: string): Promise<string> {
@@ -809,7 +911,13 @@ ${truncatedContent}`;
       { role: "user", content: userMessage },
     ];
 
-    const fullResponse = await this.apiClient.chat(messages);
+    const fullResponse = await this.apiClient.chatWithTools(
+      messages,
+      this.getTools(),
+      (toolName, toolArgs) => this.executeToolCall(toolName, toolArgs),
+      (status) => this.updateLoadingStatus(status),
+      10,
+    );
     return fullResponse;
   }
 
