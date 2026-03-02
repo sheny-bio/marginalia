@@ -373,7 +373,14 @@ export class ChatPanel {
     try {
       const response = await this.callAPI(message);
       this.removeLoading();
-      // 流式更新已经完成，不需要再 addMessage
+
+      // 创建 assistant 消息气泡，播放 typewriter 动画
+      const shell = this.createAssistantMessageShell();
+      if (shell) {
+        await this.typewriterRender(shell.contentDiv, response);
+        this.addCopyButtonToMessage(shell.messageEl, response, "assistant");
+      }
+
       await this.saveMessage("user", message);
       await this.saveMessage("assistant", response);
       // 发送后清空引用
@@ -590,43 +597,96 @@ ${truncatedContent}`;
       { role: "user", content: userMessage },
     ];
 
-    let fullResponse = "";
-    await this.apiClient.chat(messages, (chunk) => {
-      fullResponse += chunk;
-      this.updateLastMessage(fullResponse);
-    });
-
+    const fullResponse = await this.apiClient.chat(messages);
     return fullResponse;
   }
 
-  private updateLastMessage(content: string) {
+  private createAssistantMessageShell(): {
+    messageEl: HTMLElement;
+    contentDiv: HTMLElement;
+  } | null {
     const messagesDiv = this.container?.querySelector("#marginalia-messages");
-    const loading = messagesDiv?.querySelector("#marginalia-loading");
+    const doc = this.container?.ownerDocument;
+    if (!doc || !messagesDiv) return null;
 
-    if (loading) {
-      loading.removeAttribute("id");
-      const contentDiv = loading.querySelector(
-        ".marginalia-message-content",
-      ) as HTMLElement;
-      if (contentDiv) {
-        contentDiv.style.cssText =
-          "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; user-select: text; cursor: text;";
+    const messageEl = doc.createElement("div");
+    messageEl.className = "marginalia-message assistant";
+    messageEl.style.cssText =
+      "display: flex; margin-bottom: 12px; justify-content: flex-start;";
+
+    const contentDiv = doc.createElement("div");
+    contentDiv.className = "marginalia-message-content";
+    contentDiv.style.cssText =
+      "max-width: 85%; padding: 12px 16px; border-radius: 16px; background: #fff; color: #171717; border: 1px solid #e5e5e5; line-height: 1.5; user-select: text; cursor: text; position: relative; min-height: 20px;";
+
+    messageEl.appendChild(contentDiv);
+    messagesDiv.appendChild(messageEl);
+    this.scrollToBottom();
+
+    return { messageEl, contentDiv };
+  }
+
+  private typewriterRender(
+    contentDiv: HTMLElement,
+    content: string,
+  ): Promise<void> {
+    return new Promise((resolve) => {
+      const doc = contentDiv.ownerDocument;
+      if (!doc) {
         contentDiv.innerHTML = MarkdownRenderer.render(content);
+        resolve();
+        return;
       }
-    } else {
-      const messages = messagesDiv?.querySelectorAll(
-        ".marginalia-message.assistant",
-      );
-      if (messages && messages.length > 0) {
-        const lastMessage = messages[messages.length - 1];
-        const contentDiv = lastMessage.querySelector(
-          ".marginalia-message-content",
-        );
-        if (contentDiv) {
-          contentDiv.innerHTML = MarkdownRenderer.render(content);
+
+      // 注入光标样式（只注入一次）
+      if (!doc.querySelector("#marginalia-cursor-style")) {
+        const style = doc.createElement("style");
+        style.id = "marginalia-cursor-style";
+        style.textContent = `
+          @keyframes marginalia-blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+          }
+          .marginalia-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1em;
+            background: #171717;
+            margin-left: 1px;
+            vertical-align: text-bottom;
+            animation: marginalia-blink 0.8s step-start infinite;
+          }
+        `;
+        (doc.head || doc.documentElement)?.appendChild(style);
+      }
+
+      const totalLength = content.length;
+      // 动态速度：短文本逐字，长文本加速，最长约 3 秒完成
+      const intervalMs = 15;
+      const chunkSize = Math.max(1, Math.ceil(totalLength / 200));
+      let currentLength = 0;
+
+      const timer = setInterval(() => {
+        currentLength = Math.min(currentLength + chunkSize, totalLength);
+        const currentText = content.substring(0, currentLength);
+        const isDone = currentLength >= totalLength;
+
+        contentDiv.innerHTML = MarkdownRenderer.render(currentText);
+
+        if (!isDone) {
+          const cursor = doc.createElement("span");
+          cursor.className = "marginalia-cursor";
+          contentDiv.appendChild(cursor);
         }
-      }
-    }
+
+        this.scrollToBottom();
+
+        if (isDone) {
+          clearInterval(timer);
+          resolve();
+        }
+      }, intervalMs);
+    });
   }
 
   private async loadMessages() {
