@@ -103,4 +103,40 @@ export class ZoteroAPI {
     const items = pane?.getSelectedItems();
     return items && items.length > 0 ? items[0] : null;
   }
+
+  static getCollectionItems(collectionID: number): Array<{
+    index: number;
+    title: string;
+    authors: string;
+    year: string;
+    abstract: string;
+  }> {
+    const collection = Zotero.Collections.get(collectionID);
+    if (!collection) return [];
+
+    const items = collection
+      .getChildItems(false, false)
+      .filter((item: Zotero.Item) => !item.isAttachment() && !item.isNote());
+
+    return items.map((item: Zotero.Item, index: number) => {
+      const abstract = (item.getField("abstractNote") as string) || "";
+      return {
+        index: index + 1,
+        title: (item.getField("title") as string) || "未知标题",
+        authors:
+          item
+            .getCreators()
+            .map((a: any) =>
+              `${a.firstName || ""} ${a.lastName || ""}`.trim(),
+            )
+            .filter(Boolean)
+            .join(", ") || "未知作者",
+        year: (item.getField("date") as string) || "未知年份",
+        abstract:
+          abstract.length > 300
+            ? abstract.substring(0, 300) + "..."
+            : abstract,
+      };
+    });
+  }
 }

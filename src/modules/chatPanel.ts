@@ -23,6 +23,7 @@ export class ChatPanel {
   private messages: StoredMessage[] = [];
   private currentItem: any = null;
   private quotes: string[] = [];
+  private linkedCollection: { id: number; name: string } | null = null;
 
   constructor(
     storageManager: StorageManager,
@@ -154,6 +155,32 @@ export class ChatPanel {
           toolbar.appendChild(exportBtn);
           toolbar.appendChild(clearBtn);
 
+          // 关联文献库按钮（推到右端）
+          const libraryBtn = doc.createElement("button");
+          libraryBtn.id = "marginalia-library-btn";
+          libraryBtn.title = "关联文献库";
+          libraryBtn.style.cssText =
+            "display: flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px; background: none; border: 1px solid transparent; border-radius: 6px; cursor: pointer; color: #9CA3AF; font-size: 12px; font-family: inherit; margin-left: auto; transition: all 0.15s;";
+          libraryBtn.textContent = "关联文献库";
+          libraryBtn.addEventListener("mouseenter", () => {
+            if (!this.linkedCollection) {
+              libraryBtn.style.background = "#EFF6FF";
+              libraryBtn.style.borderColor = "#BFDBFE";
+              libraryBtn.style.color = "#1D4ED8";
+            }
+          });
+          libraryBtn.addEventListener("mouseleave", () => {
+            if (!this.linkedCollection) {
+              libraryBtn.style.background = "none";
+              libraryBtn.style.borderColor = "transparent";
+              libraryBtn.style.color = "#9CA3AF";
+            }
+          });
+          libraryBtn.addEventListener("click", () =>
+            this.showCollectionPicker(libraryBtn),
+          );
+          toolbar.appendChild(libraryBtn);
+
           // 创建输入容器
           const inputContainer = doc.createElement("div");
           inputContainer.className = "marginalia-input-container";
@@ -275,6 +302,175 @@ export class ChatPanel {
     } catch (error) {
       ztoolkit.log("Error ensuring panel visible:", error);
     }
+  }
+
+  private renderLinkedCollection() {
+    const inputArea = this.container?.querySelector(".marginalia-input-area");
+    if (!inputArea) return;
+    const doc = this.container?.ownerDocument;
+    if (!doc) return;
+
+    // 更新按钮高亮状态
+    const libraryBtn = inputArea.querySelector(
+      "#marginalia-library-btn",
+    ) as HTMLElement | null;
+    if (libraryBtn) {
+      if (this.linkedCollection) {
+        libraryBtn.style.background = "#EFF6FF";
+        libraryBtn.style.borderColor = "#BFDBFE";
+        libraryBtn.style.color = "#1D4ED8";
+      } else {
+        libraryBtn.style.background = "none";
+        libraryBtn.style.borderColor = "transparent";
+        libraryBtn.style.color = "#9CA3AF";
+      }
+    }
+
+    // 移除旧的集合标签
+    const existing = inputArea.querySelector("#marginalia-library-chip");
+    if (existing) existing.remove();
+
+    if (!this.linkedCollection) return;
+
+    const chipArea = doc.createElement("div");
+    chipArea.id = "marginalia-library-chip";
+    chipArea.style.cssText =
+      "display: flex; flex-wrap: wrap; gap: 6px; padding: 0 0 8px 0;";
+
+    const chip = doc.createElement("div");
+    chip.style.cssText =
+      "display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 6px; font-size: 12px; color: #1D4ED8;";
+
+    const icon = doc.createElement("span");
+    icon.textContent = "📚";
+    icon.style.fontSize = "11px";
+
+    const label = doc.createElement("span");
+    label.style.cssText =
+      "overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;";
+    label.textContent = this.linkedCollection.name;
+    label.title = this.linkedCollection.name;
+
+    const closeBtn = doc.createElement("span");
+    closeBtn.textContent = "×";
+    closeBtn.style.cssText =
+      "cursor: pointer; color: #3B82F6; font-size: 14px; line-height: 1; flex-shrink: 0;";
+    closeBtn.addEventListener("mouseenter", () => {
+      closeBtn.style.color = "#DC2626";
+    });
+    closeBtn.addEventListener("mouseleave", () => {
+      closeBtn.style.color = "#3B82F6";
+    });
+    closeBtn.addEventListener("click", () => {
+      this.linkedCollection = null;
+      this.renderLinkedCollection();
+    });
+
+    chip.appendChild(icon);
+    chip.appendChild(label);
+    chip.appendChild(closeBtn);
+    chipArea.appendChild(chip);
+
+    // 插入到 quotesDiv 之前，或 inputContainer 之前
+    const quotesDiv = inputArea.querySelector("#marginalia-quotes");
+    const inputContainer = inputArea.querySelector(
+      ".marginalia-input-container",
+    );
+    if (quotesDiv) {
+      inputArea.insertBefore(chipArea, quotesDiv);
+    } else if (inputContainer) {
+      inputArea.insertBefore(chipArea, inputContainer);
+    } else {
+      inputArea.prepend(chipArea);
+    }
+  }
+
+  private showCollectionPicker(anchorEl: HTMLElement) {
+    const doc = this.container?.ownerDocument;
+    if (!doc) return;
+
+    // 如果已存在则关闭（toggle）
+    const existingPicker = doc.querySelector("#marginalia-collection-picker");
+    if (existingPicker) {
+      existingPicker.remove();
+      return;
+    }
+
+    const libraryID = Zotero.Libraries.userLibraryID;
+    const collections = Zotero.Collections.getByLibrary(libraryID, true);
+
+    const picker = doc.createElement("div");
+    picker.id = "marginalia-collection-picker";
+    const rect = anchorEl.getBoundingClientRect();
+    picker.style.cssText = `
+      position: fixed;
+      z-index: 9999;
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      max-height: 280px;
+      overflow-y: auto;
+      min-width: 200px;
+      top: ${rect.bottom + 4}px;
+      left: ${rect.left}px;
+    `;
+
+    if (collections.length === 0) {
+      const empty = doc.createElement("div");
+      empty.style.cssText =
+        "padding: 12px 16px; color: #9CA3AF; font-size: 13px;";
+      empty.textContent = "暂无文献集合";
+      picker.appendChild(empty);
+    } else {
+      collections.forEach((col) => {
+        const item = doc.createElement("div");
+        item.style.cssText =
+          "display: flex; align-items: center; gap: 6px; padding: 8px 14px; cursor: pointer; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6; transition: background 0.1s;";
+
+        const colIcon = doc.createElement("span");
+        colIcon.textContent = "📁";
+        colIcon.style.fontSize = "12px";
+
+        const colName = doc.createElement("span");
+        colName.textContent = col.name;
+        colName.style.cssText =
+          "overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
+
+        item.appendChild(colIcon);
+        item.appendChild(colName);
+
+        item.addEventListener("mouseenter", () => {
+          item.style.background = "#F5F7FF";
+        });
+        item.addEventListener("mouseleave", () => {
+          item.style.background = "transparent";
+        });
+        item.addEventListener("click", () => {
+          this.linkedCollection = { id: col.id, name: col.name };
+          this.renderLinkedCollection();
+          picker.remove();
+        });
+        picker.appendChild(item);
+      });
+    }
+
+    (doc.body ?? doc.documentElement!).appendChild(picker);
+
+    // 点击外部关闭
+    const closeOnOutside = (e: MouseEvent) => {
+      if (
+        !picker.contains(e.target as Node) &&
+        e.target !== anchorEl &&
+        !(anchorEl as HTMLElement).contains(e.target as Node)
+      ) {
+        picker.remove();
+        doc.removeEventListener("click", closeOnOutside, true);
+      }
+    };
+    setTimeout(() => {
+      doc.addEventListener("click", closeOnOutside, true);
+    }, 0);
   }
 
   private renderQuotes() {
@@ -584,6 +780,22 @@ ${truncatedContent}`;
         systemMessage += `--- 引用 ${i + 1} ---\n${q}\n`;
       });
       systemMessage += `\n用户正在针对以上引用内容提问，请重点围绕这些段落进行回答。`;
+    }
+
+    if (this.linkedCollection) {
+      const collectionItems = ZoteroAPI.getCollectionItems(
+        this.linkedCollection.id,
+      );
+      if (collectionItems.length > 0) {
+        systemMessage += `\n\n用户已关联文献集合「${this.linkedCollection.name}」，包含以下 ${collectionItems.length} 篇文献，请在回答时参考这些文献信息：\n`;
+        collectionItems.forEach((item) => {
+          systemMessage += `\n[${item.index}] ${item.title}\n`;
+          systemMessage += `   作者：${item.authors}（${item.year}）\n`;
+          if (item.abstract) {
+            systemMessage += `   摘要：${item.abstract}\n`;
+          }
+        });
+      }
     }
 
     systemMessage += `\n\n请使用标准 Markdown 格式回复。`;
