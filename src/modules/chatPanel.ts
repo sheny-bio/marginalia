@@ -810,9 +810,7 @@ export class ChatPanel {
         return `未找到标题包含"${title}"的文献。`;
       }
 
-      this.updateLoadingStatus(
-        `📖 正在提取文献全文: "${bestMatch.title}"...`,
-      );
+      this.updateLoadingStatus(`📖 正在提取文献全文: "${bestMatch.title}"...`);
 
       const content = await ZoteroAPI.getPaperContent(bestMatch.id);
       if (!content) {

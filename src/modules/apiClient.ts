@@ -166,7 +166,6 @@ export class APIClient {
       tools.map((t) => t.function.name),
     );
 
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const canCallTools = toolCallRound < maxToolRounds;
       const currentTools = canCallTools && tools.length > 0 ? tools : undefined;
@@ -227,10 +226,7 @@ export class APIClient {
             ztoolkit.log("[API] Tool execution failed:", e);
           }
 
-          ztoolkit.log(
-            "[API] Tool result length:",
-            toolResult.length,
-          );
+          ztoolkit.log("[API] Tool result length:", toolResult.length);
 
           // 将工具结果追加到对话
           conversationMessages.push({

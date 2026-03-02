@@ -126,16 +126,12 @@ export class ZoteroAPI {
         authors:
           item
             .getCreators()
-            .map((a: any) =>
-              `${a.firstName || ""} ${a.lastName || ""}`.trim(),
-            )
+            .map((a: any) => `${a.firstName || ""} ${a.lastName || ""}`.trim())
             .filter(Boolean)
             .join(", ") || "未知作者",
         year: (item.getField("date") as string) || "未知年份",
         abstract:
-          abstract.length > 300
-            ? abstract.substring(0, 300) + "..."
-            : abstract,
+          abstract.length > 300 ? abstract.substring(0, 300) + "..." : abstract,
       };
     });
   }
