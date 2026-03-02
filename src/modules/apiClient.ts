@@ -27,11 +27,11 @@ export class APIClient {
     ztoolkit.log("[API] Model:", this.config.model);
     ztoolkit.log("[API] Messages count:", messages.length);
 
-    const body = {
+    const body: Record<string, unknown> = {
       model: this.config.model,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       temperature: this.config.temperature ?? 0.7,
-      max_tokens: this.config.maxTokens ?? 2000,
+      max_tokens: this.config.maxTokens ?? 1000000,
       stream: false,
     };
 

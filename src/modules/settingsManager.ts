@@ -25,11 +25,14 @@ export class SettingsManager {
     const url = this.getPref("apiUrl");
     const apiKey = this.getPref("apiKey");
     const model = this.getPref("model");
+    const maxTokensStr = this.getPref("maxTokens");
+    const maxTokens = maxTokensStr ? parseInt(maxTokensStr, 10) : 1000000;
 
     return {
       url: url || "https://api.openai.com/v1",
       apiKey: apiKey || "",
       model: model || "gpt-4o-mini",
+      maxTokens: isNaN(maxTokens) ? 1000000 : maxTokens,
     };
   }
 

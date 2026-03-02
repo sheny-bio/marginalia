@@ -39,6 +39,8 @@ export type FluentMessageId =
   | 'pref-fill-all-fields'
   | 'pref-help'
   | 'pref-max-history-rounds'
+  | 'pref-max-tokens'
+  | 'pref-max-tokens-input'
   | 'pref-model'
   | 'pref-model-input'
   | 'pref-save'
