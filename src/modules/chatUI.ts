@@ -920,7 +920,7 @@ export class ChatUI {
 
   addCopyButtonToMessage(
     messageEl: HTMLElement,
-    _content: string,
+    content: string,
     _role: string,
   ): void {
     const doc = messageEl.ownerDocument;
@@ -960,8 +960,7 @@ export class ChatUI {
 
     copyBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      const currentContent = contentDiv.textContent || "";
-      await this._callbacks?.onCopyText(currentContent);
+      await this._callbacks?.onCopyText(content);
       copyBtn.textContent = getString("chat-copied-button");
       copyBtn.style.background = "#D4AF37";
       copyBtn.style.color = "#fff";
