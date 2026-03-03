@@ -1,0 +1,32 @@
+/* 适配聊天界面的公式样式 */
+.marginalia-message-content .katex {
+  font-size: 1.02em;
+  line-height: 1.6;
+}
+
+.marginalia-message-content .katex-display {
+  font-size: 1.08em;
+  margin: 0.8em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* 错误样式 */
+.katex-error {
+  color: #cc0000;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+/* 长公式滚动条美化 */
+.katex-display::-webkit-scrollbar {
+  height: 4px;
+}
+
+.katex-display::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 2px;
+}

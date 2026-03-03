@@ -1,4 +1,5 @@
 import { marked } from "marked";
+import { createKaTeXExtension } from "./katex-extension";
 
 export class MarkdownRenderer {
   static initialize() {
@@ -6,6 +7,9 @@ export class MarkdownRenderer {
       breaks: true,
       gfm: true,
     });
+
+    // 注册 KaTeX 扩展
+    marked.use(createKaTeXExtension());
   }
 
   static render(content: string): string {

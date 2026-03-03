@@ -8,6 +8,7 @@ import { ChatPanel } from "./modules/chatPanel";
 import { StorageManager } from "./modules/storageManager";
 import { SettingsManager } from "./modules/settingsManager";
 import { TranslationPopup } from "./modules/translationPopup";
+import { MarkdownRenderer } from "./utils/markdown";
 
 const storageManager = new StorageManager();
 const settingsManager = new SettingsManager(storageManager);
@@ -20,6 +21,9 @@ async function onStartup() {
     Zotero.unlockPromise,
     Zotero.uiReadyPromise,
   ]);
+
+  // 初始化 Markdown 渲染器（包括 KaTeX 扩展）
+  MarkdownRenderer.initialize();
 
   initLocale();
   await storageManager.init();
@@ -45,6 +49,26 @@ async function onMainWindowLoad(win: _ZoteroTypes.MainWindow): Promise<void> {
 
   // 加载 CSS 样式
   const doc = win.document;
+
+  // 注入 KaTeX CSS
+  if (!doc.getElementById("marginalia-katex-styles")) {
+    const katexLink = doc.createElement("link");
+    katexLink.id = "marginalia-katex-styles";
+    katexLink.rel = "stylesheet";
+    katexLink.href = `chrome://${addon.data.config.addonRef}/content/katex.css`;
+    doc.documentElement?.appendChild(katexLink);
+  }
+
+  // 注入自定义样式
+  if (!doc.getElementById("marginalia-katex-custom-styles")) {
+    const customLink = doc.createElement("link");
+    customLink.id = "marginalia-katex-custom-styles";
+    customLink.rel = "stylesheet";
+    customLink.href = `chrome://${addon.data.config.addonRef}/content/katex-custom.css`;
+    doc.documentElement?.appendChild(customLink);
+  }
+
+  // 加载聊天面板 CSS
   if (!doc.getElementById("marginalia-chat-styles")) {
     const link = doc.createElement("link");
     link.id = "marginalia-chat-styles";
