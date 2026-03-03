@@ -4,6 +4,7 @@ import * as chatActions from "./chatActions";
 
 export interface UICallbacks {
   onSend: () => void;
+  onAbort: () => void;
   onExport: () => void;
   onClear: () => void;
   onLibraryBtnClick: (anchorEl: HTMLElement) => void;
@@ -20,6 +21,8 @@ export class ChatUI {
   private _inputArea: HTMLElement | null = null;
   private _callbacks: UICallbacks | null = null;
   private _hasLinkedCollection: boolean = false;
+  private _sendBtn: HTMLButtonElement | null = null;
+  private _sendState: "idle" | "loading" = "idle";
 
   getInput(): HTMLTextAreaElement | null {
     return this._inputElement;
@@ -194,18 +197,34 @@ export class ChatUI {
     // 创建发送按钮
     const sendBtn = doc.createElement("button");
     sendBtn.id = "marginalia-send";
-    sendBtn.textContent = getString("chat-send-button");
     sendBtn.style.cssText =
-      "display: flex; align-items: center; justify-content: center; padding: 8px 16px; background: #171717; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; flex-shrink: 0;";
+      "display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: #171717; color: #fff; border: none; border-radius: 8px; cursor: pointer; flex-shrink: 0; transition: background 0.15s;";
+    sendBtn.appendChild(
+      this._createSvgIcon(doc, [
+        { tag: "line", attrs: { x1: "22", y1: "2", x2: "11", y2: "13" } },
+        {
+          tag: "polygon",
+          attrs: { points: "22 2 15 22 11 13 2 9 22 2" },
+        },
+      ]),
+    );
+    this._sendBtn = sendBtn;
     sendBtn.addEventListener("mouseenter", () => {
-      sendBtn.style.background = "#404040";
+      sendBtn.style.background =
+        this._sendState === "loading" ? "#991B1B" : "#404040";
     });
     sendBtn.addEventListener("mouseleave", () => {
-      sendBtn.style.background = "#171717";
+      sendBtn.style.background =
+        this._sendState === "loading" ? "#DC2626" : "#171717";
     });
     sendBtn.addEventListener("click", () => {
-      ztoolkit.log("Send button clicked");
-      this._callbacks?.onSend();
+      if (this._sendState === "loading") {
+        ztoolkit.log("Abort button clicked");
+        this._callbacks?.onAbort();
+      } else {
+        ztoolkit.log("Send button clicked");
+        this._callbacks?.onSend();
+      }
     });
 
     textarea.addEventListener("keydown", (e: KeyboardEvent) => {
@@ -225,6 +244,45 @@ export class ChatUI {
 
     this._container = container;
     body.appendChild(container);
+  }
+
+  setSendState(state: "idle" | "loading"): void {
+    if (!this._sendBtn || !this._container) return;
+    const doc = this._container.ownerDocument;
+    if (!doc) return;
+    this._sendState = state;
+
+    // 清空按钮内容，重绘图标
+    this._sendBtn.innerHTML = "";
+    if (state === "loading") {
+      // 停止图标（方块）
+      this._sendBtn.style.background = "#DC2626";
+      this._sendBtn.title = "终止回复";
+      const NS = "http://www.w3.org/2000/svg";
+      const svg = doc.createElementNS(NS, "svg") as unknown as SVGSVGElement;
+      svg.setAttribute("width", "16");
+      svg.setAttribute("height", "16");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("fill", "currentColor");
+      const rect = doc.createElementNS(NS, "rect");
+      rect.setAttribute("x", "4");
+      rect.setAttribute("y", "4");
+      rect.setAttribute("width", "16");
+      rect.setAttribute("height", "16");
+      rect.setAttribute("rx", "2");
+      svg.appendChild(rect);
+      this._sendBtn.appendChild(svg);
+    } else {
+      // 发送图标（纸飞机）
+      this._sendBtn.style.background = "#171717";
+      this._sendBtn.title = "";
+      this._sendBtn.appendChild(
+        this._createSvgIcon(doc, [
+          { tag: "line", attrs: { x1: "22", y1: "2", x2: "11", y2: "13" } },
+          { tag: "polygon", attrs: { points: "22 2 15 22 11 13 2 9 22 2" } },
+        ]),
+      );
+    }
   }
 
   renderLinkedCollection(col: { id: number; name: string } | null): void {
@@ -382,7 +440,7 @@ export class ChatUI {
     const rect = anchorEl.getBoundingClientRect();
     const pickerHeight = picker.offsetHeight;
     const pickerWidth = picker.offsetWidth;
-    const viewportWidth = doc.documentElement.clientWidth;
+    const viewportWidth = doc.documentElement?.clientWidth ?? doc.defaultView?.innerWidth ?? 800;
 
     // 水平：优先左对齐，超出右边界则右对齐
     let left = rect.left;

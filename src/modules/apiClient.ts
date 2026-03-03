@@ -61,6 +61,7 @@ export class APIClient {
   private async rawChat(
     messages: Message[],
     tools?: ToolDefinition[],
+    signal?: AbortSignal,
   ): Promise<RawChatResult> {
     const url = this.getEndpointUrl();
     ztoolkit.log("[API] Request to:", url);
@@ -93,6 +94,7 @@ export class APIClient {
         Authorization: `Bearer ${this.config.apiKey}`,
       },
       body: JSON.stringify(body),
+      signal,
     });
 
     if (!response.ok) {
@@ -160,6 +162,7 @@ export class APIClient {
     ) => Promise<string>,
     onStatus: (status: string) => void,
     maxToolRounds: number = 10,
+    signal?: AbortSignal,
   ): Promise<string> {
     const conversationMessages: Message[] = [...messages];
     let toolCallRound = 0;
@@ -179,7 +182,7 @@ export class APIClient {
 
       let result: RawChatResult;
       try {
-        result = await this.rawChat(conversationMessages, currentTools);
+        result = await this.rawChat(conversationMessages, currentTools, signal);
       } catch (error) {
         ztoolkit.log("[API] rawChat failed:", error);
         throw new Error(`API call failed: ${error}`);

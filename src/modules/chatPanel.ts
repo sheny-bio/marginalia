@@ -25,6 +25,7 @@ export class ChatPanel {
   private linkedCollection: { id: number; name: string } | null = null;
   private chatUI: ChatUI;
   private contextBuilder: ContextBuilder;
+  private _abortController: AbortController | null = null;
 
   constructor(
     storageManager: StorageManager,
@@ -59,6 +60,9 @@ export class ChatPanel {
         if (!body.querySelector("#marginalia-container")) {
           this.chatUI.buildLayout(body, {
             onSend: () => this.sendMessage(),
+            onAbort: () => {
+              this._abortController?.abort();
+            },
             onExport: () =>
               chatActions.exportAsMarkdown(
                 { messages: this.messages, currentItem: this.currentItem },
@@ -181,10 +185,18 @@ export class ChatPanel {
     this.chatUI.removeWelcomePage();
     this.chatUI.addMessage("user", message);
     this.chatUI.showLoading();
+    this.chatUI.setSendState("loading");
+
+    const win = this.chatUI.getContainer()?.ownerDocument?.defaultView as any;
+    const AbortControllerClass =
+      win?.AbortController ?? ztoolkit.getGlobal("AbortController");
+    const abortController = new AbortControllerClass();
+    this._abortController = abortController;
 
     try {
-      const response = await this.callAPI(message);
+      const response = await this.callAPI(message, abortController.signal);
       this.chatUI.removeLoading();
+      this.chatUI.setSendState("idle");
 
       const shell = this.chatUI.createAssistantMessageShell();
       if (shell) {
@@ -200,13 +212,20 @@ export class ChatPanel {
       await this.saveMessage("assistant", response);
       this.quotes = [];
       this.chatUI.renderQuotes([]);
-    } catch (error) {
+    } catch (error: unknown) {
       this.chatUI.removeLoading();
-      this.chatUI.showErrorMessage(error);
+      this.chatUI.setSendState("idle");
+      const isAbort =
+        error instanceof Error && error.name === "AbortError";
+      if (!isAbort) {
+        this.chatUI.showErrorMessage(error);
+      }
+    } finally {
+      this._abortController = null;
     }
   }
 
-  private async callAPI(userMessage: string): Promise<string> {
+  private async callAPI(userMessage: string, signal?: AbortSignal): Promise<string> {
     const config = await this.settingsManager.getAPIConfig();
     if (
       !this.apiClient ||
@@ -247,6 +266,7 @@ export class ChatPanel {
         ),
       (s) => this.chatUI.updateLoadingStatus(s),
       10,
+      signal,
     );
   }
 
