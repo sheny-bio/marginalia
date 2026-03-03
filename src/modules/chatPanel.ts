@@ -215,8 +215,7 @@ export class ChatPanel {
     } catch (error: unknown) {
       this.chatUI.removeLoading();
       this.chatUI.setSendState("idle");
-      const isAbort =
-        error instanceof Error && error.name === "AbortError";
+      const isAbort = error instanceof Error && error.name === "AbortError";
       if (!isAbort) {
         this.chatUI.showErrorMessage(error);
       }
@@ -225,7 +224,10 @@ export class ChatPanel {
     }
   }
 
-  private async callAPI(userMessage: string, signal?: AbortSignal): Promise<string> {
+  private async callAPI(
+    userMessage: string,
+    signal?: AbortSignal,
+  ): Promise<string> {
     const config = await this.settingsManager.getAPIConfig();
     if (
       !this.apiClient ||

@@ -440,7 +440,8 @@ export class ChatUI {
     const rect = anchorEl.getBoundingClientRect();
     const pickerHeight = picker.offsetHeight;
     const pickerWidth = picker.offsetWidth;
-    const viewportWidth = doc.documentElement?.clientWidth ?? doc.defaultView?.innerWidth ?? 800;
+    const viewportWidth =
+      doc.documentElement?.clientWidth ?? doc.defaultView?.innerWidth ?? 800;
 
     // 水平：优先左对齐，超出右边界则右对齐
     let left = rect.left;
