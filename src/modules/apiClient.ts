@@ -3,7 +3,6 @@ export interface APIConfig {
   apiKey: string;
   model: string;
   temperature?: number;
-  maxTokens?: number;
 }
 
 export interface ToolCall {
@@ -49,9 +48,14 @@ export class APIClient {
   }
 
   private getEndpointUrl(): string {
-    return this.config.url.endsWith("/")
-      ? `${this.config.url}chat/completions`
-      : `${this.config.url}/chat/completions`;
+    const url = this.config.url.replace(/\/+$/, "");
+    // 如果路径最后一段是版本号（如 /v1、/v2、/v3），则补全 chat/completions
+    // 否则认为用户提供的是完整端点 URL，直接使用
+    const lastSegment = url.split("/").pop() ?? "";
+    if (/^v\d+$/i.test(lastSegment) || lastSegment === "") {
+      return `${url}/chat/completions`;
+    }
+    return url;
   }
 
   private async rawChat(
@@ -75,7 +79,6 @@ export class APIClient {
         return msg;
       }),
       temperature: this.config.temperature ?? 0.7,
-      max_tokens: this.config.maxTokens ?? 1000000,
       stream: false,
     };
 

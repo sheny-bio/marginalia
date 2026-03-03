@@ -70,7 +70,9 @@ export class ChatPanel {
                 () => this.clearHistory(),
               ),
             onLibraryBtnClick: (anchorEl) => {
-              const libraryID = Zotero.Libraries.userLibraryID;
+              const libraryID = this.currentItem
+                ? this.currentItem.libraryID
+                : Zotero.Libraries.userLibraryID;
               const collections = Zotero.Collections.getByLibrary(
                 libraryID,
                 true,

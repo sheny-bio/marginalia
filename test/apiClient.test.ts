@@ -13,13 +13,12 @@ describe("APIClient", function () {
       assert.isDefined(client);
     });
 
-    it("should accept optional temperature and maxTokens", function () {
+    it("should accept optional temperature", function () {
       const config: APIConfig = {
         url: "https://api.example.com/v1",
         apiKey: "test-key",
         model: "gpt-4",
         temperature: 0.5,
-        maxTokens: 1000,
       };
       const client = new APIClient(config);
       assert.isDefined(client);
@@ -92,18 +91,14 @@ describe("APIClient", function () {
       assert.isNotEmpty(response);
     });
 
-    it("should handle streaming response", async function () {
+    it("should handle chat response", async function () {
       this.timeout(30000);
       const messages: Message[] = [{ role: "user", content: "Count to 3" }];
-      const chunks: string[] = [];
 
-      const response = await client.chat(messages, (chunk) => {
-        chunks.push(chunk);
-      });
+      const response = await client.chat(messages);
 
       assert.isString(response);
       assert.isNotEmpty(response);
-      assert.isAbove(chunks.length, 0);
     });
 
     it("should test connection successfully", async function () {

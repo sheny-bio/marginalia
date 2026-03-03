@@ -1,7 +1,6 @@
 pref("extensions.zotero.marginalia.apiUrl", "https://api.openai.com/v1");
 pref("extensions.zotero.marginalia.apiKey", "");
 pref("extensions.zotero.marginalia.model", "gpt-4o-mini");
-pref("extensions.zotero.marginalia.maxTokens", 1000000);
 pref("extensions.zotero.marginalia.maxHistoryRounds", 20);
 pref(
   "extensions.zotero.marginalia.systemPrompt",

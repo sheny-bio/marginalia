@@ -325,7 +325,6 @@ export class ChatUI {
 
     const picker = doc.createElement("div");
     picker.id = "marginalia-collection-picker";
-    const rect = anchorEl.getBoundingClientRect();
     picker.style.cssText = `
       position: fixed;
       z-index: 9999;
@@ -336,8 +335,7 @@ export class ChatUI {
       max-height: 280px;
       overflow-y: auto;
       min-width: 200px;
-      top: ${rect.bottom + 4}px;
-      left: ${rect.left}px;
+      visibility: hidden;
     `;
 
     if (collections.length === 0) {
@@ -379,6 +377,31 @@ export class ChatUI {
     }
 
     (doc.body ?? doc.documentElement!).appendChild(picker);
+
+    // 计算位置：优先放左上方，防止溢出
+    const rect = anchorEl.getBoundingClientRect();
+    const pickerHeight = picker.offsetHeight;
+    const pickerWidth = picker.offsetWidth;
+    const viewportWidth = doc.documentElement.clientWidth;
+
+    // 水平：优先左对齐，超出右边界则右对齐
+    let left = rect.left;
+    if (left + pickerWidth > viewportWidth - 8) {
+      left = viewportWidth - pickerWidth - 8;
+    }
+    if (left < 8) left = 8;
+
+    // 垂直：优先显示在按钮上方
+    let top: number;
+    if (rect.top - pickerHeight - 4 >= 8) {
+      top = rect.top - pickerHeight - 4;
+    } else {
+      top = rect.bottom + 4;
+    }
+
+    picker.style.left = `${left}px`;
+    picker.style.top = `${top}px`;
+    picker.style.visibility = "visible";
 
     // 点击外部关闭
     const closeOnOutside = (e: MouseEvent) => {

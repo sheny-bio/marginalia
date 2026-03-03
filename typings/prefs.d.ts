@@ -10,7 +10,6 @@ declare namespace _ZoteroTypes {
       "apiUrl": string;
       "apiKey": string;
       "model": string;
-      "maxTokens": number;
       "maxHistoryRounds": number;
       "systemPrompt": string;
     };
