@@ -7,6 +7,7 @@ export interface UICallbacks {
   onAbort: () => void;
   onExport: () => void;
   onClear: () => void;
+  onSaveAsNote: () => void;
   onLibraryBtnClick: (anchorEl: HTMLElement) => void;
   onSuggestionClick: (text: string) => void;
   onQuoteRemove: (index: number) => void;
@@ -132,7 +133,41 @@ export class ChatUI {
     });
     clearBtn.addEventListener("click", () => this._callbacks?.onClear());
 
+    // 保存为笔记按钮
+    const saveNoteBtn = doc.createElement("button");
+    saveNoteBtn.className = "marginalia-toolbar-btn";
+    saveNoteBtn.title = getString("chat-menu-save-as-note");
+    saveNoteBtn.style.cssText =
+      "display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: none; border: 1px solid transparent; border-radius: 6px; cursor: pointer; color: #9CA3AF; transition: all 0.15s; padding: 0;";
+    saveNoteBtn.appendChild(
+      this._createSvgIcon(doc, [
+        {
+          tag: "path",
+          attrs: {
+            d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z",
+          },
+        },
+        { tag: "polyline", attrs: { points: "14 2 14 8 20 8" } },
+        { tag: "line", attrs: { x1: "12", y1: "12", x2: "12", y2: "18" } },
+        { tag: "line", attrs: { x1: "9", y1: "15", x2: "15", y2: "15" } },
+      ]),
+    );
+    saveNoteBtn.addEventListener("mouseenter", () => {
+      saveNoteBtn.style.background = "#EFF6FF";
+      saveNoteBtn.style.borderColor = "#BFDBFE";
+      saveNoteBtn.style.color = "#1D4ED8";
+    });
+    saveNoteBtn.addEventListener("mouseleave", () => {
+      saveNoteBtn.style.background = "none";
+      saveNoteBtn.style.borderColor = "transparent";
+      saveNoteBtn.style.color = "#9CA3AF";
+    });
+    saveNoteBtn.addEventListener("click", () =>
+      this._callbacks?.onSaveAsNote(),
+    );
+
     toolbar.appendChild(exportBtn);
+    toolbar.appendChild(saveNoteBtn);
     toolbar.appendChild(clearBtn);
 
     // 关联文献库按钮（推到右端）

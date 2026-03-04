@@ -73,6 +73,18 @@ export class ChatPanel {
                 this.chatUI.getContainer()!,
                 () => this.clearHistory(),
               ),
+            onSaveAsNote: () =>
+              chatActions.showSaveAsNoteDialog(
+                this.chatUI.getContainer()!,
+                {
+                  messages: this.messages,
+                  currentItem: this.currentItem,
+                  currentItemID: this.currentItemID,
+                  apiClient: this.apiClient,
+                  settingsManager: this.settingsManager,
+                },
+                (msg) => this.chatUI.showToast(msg),
+              ),
             onLibraryBtnClick: (anchorEl) => {
               const libraryID = this.currentItem
                 ? this.currentItem.libraryID
