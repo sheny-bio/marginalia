@@ -30,6 +30,7 @@ pref-save-success = ✓ 设置已保存！
 pref-save-failed = ✗ 保存失败：{ $error }
 pref-fill-all-fields = 请填写所有 API 配置项
 
-pref-enable-vision = 图片识别（Vision）：
+pref-enable-vision = 图片识别
+pref-enable-vision-hint = 仅支持多模态大模型（如 GPT-4o、Claude 3、Gemini 等），请确认您的模型支持视觉能力后再勾选
 
 pref-help = { $name } Build { $version } { $time }

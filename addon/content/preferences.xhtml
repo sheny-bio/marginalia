@@ -48,7 +48,24 @@
         data-l10n-id="pref-model-input"
       />
     </hbox>
-    <hbox style="gap: 12px">
+    <hbox align="center" style="margin-top: 4px; padding: 8px; background: #f0f7ff; border-radius: 6px; border: 1px solid #c2ddf7;">
+      <html:input
+        type="checkbox"
+        id="marginalia-enableVision"
+        preference="extensions.zotero.marginalia.enableVision"
+        style="margin-right: 6px"
+      />
+      <html:label
+        for="marginalia-enableVision"
+        data-l10n-id="pref-enable-vision"
+        style="color: #1a6fba; font-weight: 600; margin-right: 8px"
+      ></html:label>
+      <html:span
+        data-l10n-id="pref-enable-vision-hint"
+        style="color: #888; font-size: 11px"
+      ></html:span>
+    </hbox>
+    <hbox style="gap: 12px; margin-top: 4px">
       <button
         id="marginalia-test-connection"
         data-l10n-id="pref-test-connection"
@@ -76,19 +93,7 @@
         style="width: 60px"
       />
     </hbox>
-    <hbox align="center">
-      <html:label
-        for="marginalia-enableVision"
-        style="width: 130px"
-        data-l10n-id="pref-enable-vision"
-      ></html:label>
-      <html:input
-        type="checkbox"
-        id="marginalia-enableVision"
-        preference="extensions.zotero.marginalia.enableVision"
-      />
-    </hbox>
-    <hbox align="start">
+<hbox align="start">
       <html:label
         for="marginalia-systemPrompt"
         style="width: 120px; margin-top: 8px"

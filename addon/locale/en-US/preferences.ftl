@@ -30,6 +30,7 @@ pref-save-success = ✓ Settings saved successfully!
 pref-save-failed = ✗ Failed to save settings: { $error }
 pref-fill-all-fields = Please fill in all API configuration fields
 
-pref-enable-vision = Vision (Image):
+pref-enable-vision = Enable Vision (Image Recognition)
+pref-enable-vision-hint = Only works with multimodal models (e.g. GPT-4o, Claude 3, Gemini). Enable only if your model supports vision.
 
 pref-help = { $name } Build { $version } { $time }
