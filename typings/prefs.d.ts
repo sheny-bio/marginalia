@@ -12,6 +12,7 @@ declare namespace _ZoteroTypes {
       "model": string;
       "maxHistoryRounds": number;
       "systemPrompt": string;
+      "enableVision": boolean;
     };
   }
 }

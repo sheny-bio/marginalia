@@ -58,4 +58,12 @@ export class SettingsManager {
   async setSystemPrompt(prompt: string) {
     this.setPref("systemPrompt", prompt);
   }
+
+  getEnableVision(): boolean {
+    try {
+      return !!Zotero.Prefs.get(`${PREF_PREFIX}.enableVision`, true);
+    } catch {
+      return false;
+    }
+  }
 }

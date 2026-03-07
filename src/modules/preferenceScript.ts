@@ -1,5 +1,6 @@
 import { config } from "../../package.json";
 import { getString } from "../utils/locale";
+import { getPref, setPref } from "../utils/prefs";
 import { APIClient } from "./apiClient";
 import { SettingsManager } from "./settingsManager";
 import { StorageManager } from "./storageManager";
@@ -29,6 +30,14 @@ export async function registerPrefsScripts(_window: Window) {
 function bindPrefEvents() {
   const window = addon.data.prefs?.window;
   if (!window) return;
+
+  // 回显 enableVision checkbox 状态
+  const enableVisionInput = window.document?.querySelector(
+    "#marginalia-enableVision",
+  ) as HTMLInputElement;
+  if (enableVisionInput) {
+    enableVisionInput.checked = !!getPref("enableVision");
+  }
 
   const testBtn = window.document?.querySelector("#marginalia-test-connection");
   testBtn?.addEventListener("click", async () => {
@@ -103,6 +112,9 @@ async function saveSettings(window: Window) {
   const modelInput = window.document?.querySelector(
     "#marginalia-model",
   ) as HTMLInputElement;
+  const enableVisionInput = window.document?.querySelector(
+    "#marginalia-enableVision",
+  ) as HTMLInputElement;
 
   const url = apiUrlInput?.value || "";
   const apiKey = apiKeyInput?.value || "";
@@ -115,6 +127,7 @@ async function saveSettings(window: Window) {
 
   try {
     await settingsManager.setAPIConfig(url, apiKey, model);
+    setPref("enableVision", !!enableVisionInput?.checked);
     window.alert(getString("pref-save-success"));
   } catch (error) {
     window.alert(

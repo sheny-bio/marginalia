@@ -1,4 +1,4 @@
-import { ToolDefinition } from "./apiClient";
+import { ToolDefinition, ContentPart } from "./apiClient";
 import { ZoteroAPI } from "./zoteroAPI";
 import { getString } from "../utils/locale";
 
@@ -9,18 +9,28 @@ export class ContextBuilder {
     linkedCollection: { id: number; name: string } | null;
     systemPrompt: string;
     onStatusUpdate?: (status: string) => void;
+    enableVision?: boolean;
+    pagedContent?: string | null;
   }): Promise<{ systemMessage: string; tools: ToolDefinition[] }> {
     const paperInfo = ZoteroAPI.getPaperInfo(options.itemID);
-    const paperContent = await ZoteroAPI.getPaperContent(options.itemID);
-    if (!paperContent) {
+    const isVisionMode = !!options.enableVision && !!options.pagedContent;
+
+    let contentText: string | null = null;
+    if (isVisionMode) {
+      contentText = options.pagedContent!;
+    } else {
+      contentText = await ZoteroAPI.getPaperContent(options.itemID);
+    }
+
+    if (!contentText) {
       throw new Error(getString("chat-no-pdf-content"));
     }
 
     const truncatedContent =
-      paperContent.length > 50000
-        ? paperContent.substring(0, 50000) +
+      contentText.length > 50000
+        ? contentText.substring(0, 50000) +
           "\n\n[Content truncated due to length...]"
-        : paperContent;
+        : contentText;
 
     let systemMessage = `${options.systemPrompt}
 
@@ -32,6 +42,10 @@ export class ContextBuilder {
 
 论文全文内容：
 ${truncatedContent}`;
+
+    if (isVisionMode) {
+      systemMessage += `\n\n注意：论文全文按 [Page X] 标记分页。当用户询问图表、图片或公式时，根据上下文判断其所在页码，使用 get_page_image 工具获取该页面图片进行分析。`;
+    }
 
     if (options.quotes.length > 0) {
       systemMessage += `\n\n用户引用了论文中的以下段落：\n`;
@@ -61,12 +75,12 @@ ${truncatedContent}`;
 
     return {
       systemMessage,
-      tools: this.getTools(),
+      tools: this.getTools(options.enableVision),
     };
   }
 
-  getTools(): ToolDefinition[] {
-    return [
+  getTools(enableVision?: boolean): ToolDefinition[] {
+    const tools: ToolDefinition[] = [
       {
         type: "function",
         function: {
@@ -87,20 +101,38 @@ ${truncatedContent}`;
         },
       },
     ];
+
+    if (enableVision) {
+      tools.push({
+        type: "function",
+        function: {
+          name: "get_page_image",
+          description:
+            "获取 PDF 指定页面的图片。当用户询问论文中的图表、图片、公式或视觉元素时，" +
+            "根据全文中的 [Page X] 标记判断目标所在页码，调用此工具获取该页面的图片进行分析。",
+          parameters: {
+            type: "object",
+            properties: {
+              page_number: {
+                type: "number",
+                description: "要获取的页码（从1开始）",
+              },
+            },
+            required: ["page_number"],
+          },
+        },
+      });
+    }
+
+    return tools;
   }
 
   async executeToolCall(
     toolName: string,
     toolArgs: Record<string, unknown>,
     onStatusUpdate?: (status: string) => void,
-  ): Promise<string> {
-    ztoolkit.log(
-      "[ContextBuilder] Executing tool:",
-      toolName,
-      "args:",
-      toolArgs,
-    );
-
+    onGetPageImage?: (pageNumber: number) => Promise<string | null>,
+  ): Promise<string | ContentPart[]> {
     if (toolName === "get_paper_content") {
       const title = toolArgs.title as string | undefined;
       if (!title) {
@@ -135,6 +167,32 @@ ${truncatedContent}`;
           : content;
 
       return `文献《${bestMatch.title}》全文内容：\n\n${truncated}`;
+    }
+
+    if (toolName === "get_page_image") {
+      const pageNumber = toolArgs.page_number as number | undefined;
+      if (!pageNumber || pageNumber < 1) {
+        return "错误：请提供有效的页码（从1开始）";
+      }
+
+      onStatusUpdate?.(`🖼️ 正在渲染第 ${pageNumber} 页图片...`);
+
+      if (!onGetPageImage) {
+        return "当前无法获取页面图片，请确保 PDF 阅读器处于打开状态。";
+      }
+
+      const dataUrl = await onGetPageImage(pageNumber);
+      if (!dataUrl) {
+        return `无法渲染第 ${pageNumber} 页，请检查页码是否有效且 PDF 阅读器已打开。`;
+      }
+
+      return [
+        { type: "text", text: `以下是论文第 ${pageNumber} 页的图片：` },
+        {
+          type: "image_url",
+          image_url: { url: dataUrl, detail: "high" },
+        },
+      ] as ContentPart[];
     }
 
     return `未知工具: ${toolName}`;

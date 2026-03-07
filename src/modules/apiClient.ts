@@ -5,6 +5,13 @@ export interface APIConfig {
   temperature?: number;
 }
 
+export type ContentPart =
+  | { type: "text"; text: string }
+  | {
+      type: "image_url";
+      image_url: { url: string; detail?: "low" | "high" | "auto" };
+    };
+
 export interface ToolCall {
   id: string;
   type: "function";
@@ -16,7 +23,7 @@ export interface ToolCall {
 
 export interface Message {
   role: "user" | "assistant" | "system" | "tool";
-  content: string | null;
+  content: string | ContentPart[] | null;
   tool_calls?: ToolCall[];
   tool_call_id?: string;
 }
@@ -159,7 +166,7 @@ export class APIClient {
     onToolCall: (
       toolName: string,
       toolArgs: Record<string, unknown>,
-    ) => Promise<string>,
+    ) => Promise<string | ContentPart[]>,
     onStatus: (status: string) => void,
     maxToolRounds: number = 10,
     signal?: AbortSignal,
@@ -224,7 +231,7 @@ export class APIClient {
             toolArgs,
           );
 
-          let toolResult: string;
+          let toolResult: string | ContentPart[];
           try {
             toolResult = await onToolCall(toolCall.function.name, toolArgs);
           } catch (e) {
@@ -232,14 +239,45 @@ export class APIClient {
             ztoolkit.log("[API] Tool execution failed:", e);
           }
 
-          ztoolkit.log("[API] Tool result length:", toolResult.length);
+          ztoolkit.log(
+            "[API] Tool result length:",
+            typeof toolResult === "string"
+              ? toolResult.length
+              : `${toolResult.length} parts`,
+          );
 
           // 将工具结果追加到对话
-          conversationMessages.push({
-            role: "tool",
-            content: toolResult,
-            tool_call_id: toolCall.id,
-          });
+          // 若结果含图片（ContentPart[]），tool 消息只放文本摘要，
+          // 图片单独放到 user 消息中（多数 API 的 tool 消息不支持多模态）
+          if (Array.isArray(toolResult)) {
+            const textParts = toolResult
+              .filter((p) => p.type === "text")
+              .map((p) => (p as { type: "text"; text: string }).text)
+              .join("\n");
+            const imageParts = toolResult.filter((p) => p.type === "image_url");
+
+            conversationMessages.push({
+              role: "tool",
+              content: textParts || "OK",
+              tool_call_id: toolCall.id,
+            });
+
+            if (imageParts.length > 0) {
+              conversationMessages.push({
+                role: "user",
+                content: [
+                  { type: "text" as const, text: textParts },
+                  ...imageParts,
+                ],
+              });
+            }
+          } else {
+            conversationMessages.push({
+              role: "tool",
+              content: toolResult,
+              tool_call_id: toolCall.id,
+            });
+          }
         }
 
         toolCallRound++;

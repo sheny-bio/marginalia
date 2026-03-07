@@ -51,6 +51,7 @@ export type FluentMessageId =
   | 'pref-api-url'
   | 'pref-api-url-input'
   | 'pref-chat-settings'
+  | 'pref-enable-vision'
   | 'pref-fill-all-fields'
   | 'pref-help'
   | 'pref-max-history-rounds'

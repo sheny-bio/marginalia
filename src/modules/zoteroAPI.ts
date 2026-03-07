@@ -135,4 +135,110 @@ export class ZoteroAPI {
       };
     });
   }
+
+  /**
+   * 获取当前活跃的 PDF reader 上下文（pdfViewer + iframeDocument）。
+   * 仅在 PDF 阅读器标签页处于激活状态时返回有效结果。
+   */
+  static getActivePdfReaderContext(): {
+    pdfViewer: any;
+    iframeDocument: Document;
+  } | null {
+    try {
+      const win = Zotero.getMainWindow();
+      const tabs = (win as any)?.Zotero_Tabs;
+      const tabID = tabs?.selectedID;
+      if (!tabID) return null;
+
+      const reader = Zotero.Reader.getByTabID(tabID);
+      if (!reader) return null;
+
+      const internalReader = (reader as any)._internalReader;
+      if (!internalReader) return null;
+
+      const iframeWindow =
+        internalReader._primaryView?._iframeWindow ??
+        internalReader._iframeWindow;
+      if (!iframeWindow) return null;
+
+      const pdfViewer = (iframeWindow as any).PDFViewerApplication?.pdfViewer;
+      if (!pdfViewer) return null;
+
+      return {
+        pdfViewer,
+        iframeDocument: iframeWindow.document,
+      };
+    } catch (e) {
+      ztoolkit.log("[ZoteroAPI] getActivePdfReaderContext error:", e);
+      return null;
+    }
+  }
+
+  /**
+   * 将 PDF 指定页渲染为 JPEG base64 字符串。
+   * 优先抓取已渲染的 canvas，未渲染时强制 draw 后再抓取。
+   */
+  static async renderPageToBase64(
+    pdfViewer: any,
+    pageNumber: number,
+  ): Promise<string | null> {
+    try {
+      const pageView = pdfViewer.getPageView(pageNumber - 1);
+      if (!pageView) return null;
+
+      // 已渲染的页面，直接抓 canvas
+      if (pageView.canvas) {
+        return pageView.canvas.toDataURL("image/jpeg", 0.85);
+      }
+
+      // 未渲染的页面，调用 draw() 强制渲染
+      if (typeof pageView.draw === "function") {
+        await pageView.draw();
+        if (pageView.canvas) {
+          return pageView.canvas.toDataURL("image/jpeg", 0.85);
+        }
+      }
+
+      return null;
+    } catch (e) {
+      ztoolkit.log("[ZoteroAPI] renderPageToBase64 error:", e);
+      return null;
+    }
+  }
+
+  /**
+   * 逐页提取 PDF 文本内容，带 [Page X] 分页标记。
+   * 通过 pdfViewer 的 pageView.pdfPage 提取文本。
+   */
+  static async getPaperContentWithPages(
+    pdfViewer: any,
+  ): Promise<string | null> {
+    try {
+      const numPages = pdfViewer.pagesCount;
+      if (!numPages) return null;
+
+      const parts: string[] = [];
+
+      for (let i = 0; i < numPages; i++) {
+        const pageView = pdfViewer.getPageView(i);
+        const pdfPage = pageView?.pdfPage;
+        if (!pdfPage || typeof pdfPage.getTextContent !== "function") continue;
+
+        const textContent = await pdfPage.getTextContent();
+        const text = textContent.items
+          .map((item: any) => item.str)
+          .join("")
+          .trim();
+
+        if (text) {
+          parts.push(`[Page ${i + 1}]\n${text}`);
+        }
+      }
+
+      return parts.length > 0 ? parts.join("\n\n") : null;
+    } catch (e) {
+      ztoolkit.log("[ZoteroAPI] getPaperContentWithPages error:", e);
+      return null;
+    }
+  }
 }

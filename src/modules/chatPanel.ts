@@ -26,6 +26,7 @@ export class ChatPanel {
   private chatUI: ChatUI;
   private contextBuilder: ContextBuilder;
   private _abortController: AbortController | null = null;
+  private _pagedContentCache: string | null = null;
 
   constructor(
     storageManager: StorageManager,
@@ -131,6 +132,7 @@ export class ChatPanel {
       this.currentItemID = item.id;
       this.currentItem = item;
       this.quotes = [];
+      this._pagedContentCache = null;
       this.chatUI.renderQuotes([]);
       await this.loadMessages();
     }
@@ -170,27 +172,11 @@ export class ChatPanel {
   }
 
   private async sendMessage() {
-    ztoolkit.log("sendMessage called");
     const input = this.chatUI.getInput();
-    ztoolkit.log("input element:", input);
-    ztoolkit.log("input.value raw:", input?.value);
-    if (!input) {
-      ztoolkit.log("No input element");
-      return;
-    }
+    if (!input) return;
 
     const message = input.value?.trim();
-    ztoolkit.log(
-      "message:",
-      message || "<empty string>",
-      "currentItemID:",
-      this.currentItemID,
-    );
-
-    if (!message || !this.currentItemID) {
-      ztoolkit.log("Early return - message empty or no item selected");
-      return;
-    }
+    if (!message || !this.currentItemID) return;
 
     input.value = "";
     input.style.height = "auto";
@@ -256,6 +242,26 @@ export class ChatPanel {
       };
     }
 
+    const enableVision = this.settingsManager.getEnableVision();
+
+    // 若启用 vision，尝试从当前 PDF reader 获取带页码全文（带缓存）
+    let pagedContent: string | null = null;
+    let pdfReaderCtx: ReturnType<typeof ZoteroAPI.getActivePdfReaderContext> =
+      null;
+    if (enableVision) {
+      pdfReaderCtx = ZoteroAPI.getActivePdfReaderContext();
+      if (pdfReaderCtx) {
+        if (!this._pagedContentCache) {
+          this._pagedContentCache = await ZoteroAPI.getPaperContentWithPages(
+            pdfReaderCtx.pdfViewer,
+          );
+        }
+        pagedContent = this._pagedContentCache;
+      }
+    }
+
+    const visionEffective = enableVision && !!pagedContent;
+
     const systemPrompt = await this.settingsManager.getSystemPrompt();
     const { systemMessage, tools } = await this.contextBuilder.build({
       itemID: this.currentItemID!,
@@ -263,6 +269,8 @@ export class ChatPanel {
       linkedCollection: this.linkedCollection,
       systemPrompt,
       onStatusUpdate: (s) => this.chatUI.updateLoadingStatus(s),
+      enableVision: visionEffective,
+      pagedContent,
     });
 
     const messages: Message[] = [
@@ -271,12 +279,24 @@ export class ChatPanel {
       { role: "user", content: userMessage },
     ];
 
+    // 构建 onGetPageImage 回调（tool call 时重新获取 context 以应对标签页切换）
+    const onGetPageImage = visionEffective
+      ? async (pageNumber: number): Promise<string | null> => {
+          const ctx = ZoteroAPI.getActivePdfReaderContext();
+          if (!ctx) return null;
+          return ZoteroAPI.renderPageToBase64(ctx.pdfViewer, pageNumber);
+        }
+      : undefined;
+
     return this.apiClient.chatWithTools(
       messages,
       tools,
       (toolName, toolArgs) =>
-        this.contextBuilder.executeToolCall(toolName, toolArgs, (s) =>
-          this.chatUI.updateLoadingStatus(s),
+        this.contextBuilder.executeToolCall(
+          toolName,
+          toolArgs,
+          (s) => this.chatUI.updateLoadingStatus(s),
+          onGetPageImage,
         ),
       (s) => this.chatUI.updateLoadingStatus(s),
       10,
@@ -287,17 +307,8 @@ export class ChatPanel {
   private async loadMessages() {
     if (!this.currentItemID) return;
 
-    ztoolkit.log(
-      "[ChatPanel] Loading messages for itemID:",
-      this.currentItemID,
-    );
     const loadedMessages = await this.storageManager.getMessages(
       this.currentItemID,
-    );
-    ztoolkit.log(
-      "[ChatPanel] Loaded",
-      loadedMessages.length,
-      "messages from storage",
     );
     this.messages = loadedMessages.map((msg) => ({
       role: msg.role as "user" | "assistant" | "system",
@@ -323,20 +334,11 @@ export class ChatPanel {
   private async saveMessage(role: string, content: string) {
     if (!this.currentItemID) return;
 
-    ztoolkit.log("[ChatPanel] Saving message:", {
-      role,
-      contentLength: content.length,
-      itemID: this.currentItemID,
-    });
     await this.storageManager.saveMessage(this.currentItemID, role, content);
     this.messages.push({
       role: role as "user" | "assistant" | "system",
       content,
     });
-    ztoolkit.log(
-      "[ChatPanel] Message saved, total messages:",
-      this.messages.length,
-    );
 
     await this.enforceHistoryLimit();
   }

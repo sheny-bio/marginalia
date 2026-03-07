@@ -30,4 +30,6 @@ pref-save-success = ✓ 设置已保存！
 pref-save-failed = ✗ 保存失败：{ $error }
 pref-fill-all-fields = 请填写所有 API 配置项
 
+pref-enable-vision = 图片识别（Vision）：
+
 pref-help = { $name } Build { $version } { $time }

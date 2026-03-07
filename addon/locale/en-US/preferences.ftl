@@ -30,4 +30,6 @@ pref-save-success = ✓ Settings saved successfully!
 pref-save-failed = ✗ Failed to save settings: { $error }
 pref-fill-all-fields = Please fill in all API configuration fields
 
+pref-enable-vision = Vision (Image):
+
 pref-help = { $name } Build { $version } { $time }
