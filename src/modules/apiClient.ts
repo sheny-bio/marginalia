@@ -54,15 +54,74 @@ export class APIClient {
     this.config = config;
   }
 
-  private getEndpointUrl(): string {
-    const url = this.config.url.replace(/\/+$/, "");
-    // 如果路径最后一段是版本号（如 /v1、/v2、/v3），则补全 chat/completions
-    // 否则认为用户提供的是完整端点 URL，直接使用
+  getEndpointUrl(): string {
+    return APIClient.buildCandidates(this.config.url)[0];
+  }
+
+  /**
+   * 根据用户输入的 URL 生成候选端点列表，按优先级排列。
+   * 测试时依次尝试，找到第一个可用的端点。
+   */
+  static buildCandidates(rawUrl: string): string[] {
+    const url = rawUrl.replace(/\/+$/, "");
     const lastSegment = url.split("/").pop() ?? "";
-    if (/^v\d+$/i.test(lastSegment) || lastSegment === "") {
-      return `${url}/chat/completions`;
+
+    // 已经是完整端点（末尾是 completions）
+    if (lastSegment === "completions") {
+      return [url];
     }
-    return url;
+
+    // 末尾是版本号（v1 / v2 / v3 ...）
+    if (/^v\d+$/i.test(lastSegment)) {
+      return [`${url}/chat/completions`];
+    }
+
+    // 末尾是 "chat"
+    if (lastSegment === "chat") {
+      return [`${url}/completions`];
+    }
+
+    // 其他情况（如 https://api.openai.com 或 https://xxx.com/api）
+    // 依次尝试常见路径变体
+    return [
+      `${url}/v1/chat/completions`,
+      `${url}/chat/completions`,
+      `${url}/v2/chat/completions`,
+      `${url}/v3/chat/completions`,
+    ];
+  }
+
+  /**
+   * 探测用户输入的 URL，依次尝试候选端点，返回第一个可用的完整端点 URL。
+   * 找不到时抛出错误，附带每个候选的失败原因。
+   */
+  static async resolveWorkingEndpoint(
+    rawUrl: string,
+    apiKey: string,
+    model: string,
+  ): Promise<string> {
+    const candidates = APIClient.buildCandidates(rawUrl);
+    const errors: string[] = [];
+
+    for (const candidate of candidates) {
+      ztoolkit.log("[API] Probing endpoint:", candidate);
+      try {
+        const client = new APIClient({ url: candidate, apiKey, model });
+        const ok = await client.testConnection();
+        if (ok) {
+          ztoolkit.log("[API] Resolved endpoint:", candidate);
+          return candidate;
+        }
+        errors.push(`${candidate}: no response`);
+      } catch (e) {
+        errors.push(`${candidate}: ${e}`);
+        ztoolkit.log("[API] Probe failed:", candidate, e);
+      }
+    }
+
+    throw new Error(
+      `所有候选端点均无法连通：\n${errors.join("\n")}`,
+    );
   }
 
   private async rawChat(

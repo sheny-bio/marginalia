@@ -79,14 +79,17 @@ async function testAPIConnection(window: Window) {
   testBtn?.setAttribute("disabled", "true");
 
   try {
-    const client = new APIClient({ url, apiKey, model });
-    const isConnected = await client.testConnection();
+    // 依次探测候选端点，找到第一个可用的完整 URL
+    const resolvedUrl = await APIClient.resolveWorkingEndpoint(url, apiKey, model);
 
-    if (isConnected) {
-      window.alert(getString("pref-test-connection-success"));
-    } else {
-      window.alert(getString("pref-test-connection-failed"));
+    // 回写到输入框（让用户看到实际使用的地址）并持久化
+    if (resolvedUrl !== url) {
+      apiUrlInput.value = resolvedUrl;
     }
+    const storageManager = new StorageManager();
+    const settingsManager = new SettingsManager(storageManager);
+    await settingsManager.setAPIConfig(resolvedUrl, apiKey, model);
+    window.alert(getString("pref-test-connection-success"));
   } catch (error) {
     window.alert(
       getString("pref-test-connection-error", {
