@@ -119,9 +119,7 @@ export class APIClient {
       }
     }
 
-    throw new Error(
-      `所有候选端点均无法连通：\n${errors.join("\n")}`,
-    );
+    throw new Error(`所有候选端点均无法连通：\n${errors.join("\n")}`);
   }
 
   private async rawChat(

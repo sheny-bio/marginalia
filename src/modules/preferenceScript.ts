@@ -80,7 +80,11 @@ async function testAPIConnection(window: Window) {
 
   try {
     // 依次探测候选端点，找到第一个可用的完整 URL
-    const resolvedUrl = await APIClient.resolveWorkingEndpoint(url, apiKey, model);
+    const resolvedUrl = await APIClient.resolveWorkingEndpoint(
+      url,
+      apiKey,
+      model,
+    );
 
     // 回写到输入框（让用户看到实际使用的地址）并持久化
     if (resolvedUrl !== url) {
