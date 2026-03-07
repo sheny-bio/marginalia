@@ -18,6 +18,7 @@ chat-suggestion-summarize = Summarize this paper
 chat-suggestion-contributions = What are the key contributions?
 chat-suggestion-methodology = Explain the methodology
 chat-suggestion-limitations = What are the limitations?
+chat-suggestion-describe-figure = Describe the layout of Figure 1
 chat-copy-button = Copy
 chat-copied-button = Copied!
 chat-menu-export = Export as Markdown

@@ -18,6 +18,7 @@ chat-suggestion-summarize = 总结这篇论文
 chat-suggestion-contributions = 主要贡献是什么？
 chat-suggestion-methodology = 解释研究方法
 chat-suggestion-limitations = 有哪些局限性？
+chat-suggestion-describe-figure = 详细描述图1布局
 chat-copy-button = 复制
 chat-copied-button = 已复制！
 chat-menu-export = 导出为 Markdown

@@ -32,6 +32,7 @@ export type FluentMessageId =
   | 'chat-send-button'
   | 'chat-sidenav'
   | 'chat-suggestion-contributions'
+  | 'chat-suggestion-describe-figure'
   | 'chat-suggestion-limitations'
   | 'chat-suggestion-methodology'
   | 'chat-suggestion-summarize'

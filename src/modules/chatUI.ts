@@ -857,41 +857,46 @@ export class ChatUI {
     this._messagesDiv.appendChild(welcome);
 
     // 添加快捷提问按钮
-    const suggestions = [
-      getString("chat-suggestion-summarize"),
-      getString("chat-suggestion-contributions"),
-      getString("chat-suggestion-methodology"),
-      getString("chat-suggestion-limitations"),
+    const suggestions: Array<{ text: string; highlight?: boolean }> = [
+      { text: getString("chat-suggestion-summarize") },
+      { text: getString("chat-suggestion-contributions") },
+      { text: getString("chat-suggestion-methodology") },
+      { text: getString("chat-suggestion-limitations") },
+      { text: getString("chat-suggestion-describe-figure"), highlight: true },
     ];
 
     const suggestionsContainer = welcome.querySelector(
       "#marginalia-welcome-suggestions",
     );
     if (suggestionsContainer) {
-      for (const text of suggestions) {
+      for (const { text, highlight } of suggestions) {
         const btn = doc.createElement("button");
         btn.textContent = text;
+        const baseBg = highlight ? "#fff7ed" : "#FFFFFF";
+        const baseBorder = highlight ? "#f97316" : "#E5E5E5";
+        const baseColor = highlight ? "#c2410c" : "#171717";
         btn.style.cssText = `
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 10px 16px;
-          background: #FFFFFF;
-          border: 1px solid #E5E5E5;
+          background: ${baseBg};
+          border: 1px solid ${baseBorder};
           border-radius: 10px;
           font-size: 13px;
-          color: #171717;
+          color: ${baseColor};
           cursor: pointer;
           font-family: inherit;
+          font-weight: ${highlight ? "600" : "normal"};
           transition: background-color 0.15s, border-color 0.15s;
         `;
         btn.addEventListener("mouseenter", () => {
-          btn.style.background = "#F5F5F5";
-          btn.style.borderColor = "#D4AF37";
+          btn.style.background = highlight ? "#ffedd5" : "#F5F5F5";
+          btn.style.borderColor = highlight ? "#ea580c" : "#D4AF37";
         });
         btn.addEventListener("mouseleave", () => {
-          btn.style.background = "#FFFFFF";
-          btn.style.borderColor = "#E5E5E5";
+          btn.style.background = baseBg;
+          btn.style.borderColor = baseBorder;
         });
         btn.addEventListener("click", () => {
           this._callbacks?.onSuggestionClick(text);
