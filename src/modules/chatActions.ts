@@ -473,49 +473,24 @@ export async function copyToClipboard(
   onToast: (msg: string) => void,
 ): Promise<void> {
   ztoolkit.log("[Copy] Starting copy, text length:", text.length);
-  ztoolkit.log("[Copy] Text preview:", text.substring(0, 100));
 
-  // 方法1: Zotero.Utilities.Internal.copyTextToClipboard
-  try {
-    ztoolkit.log("[Copy] Trying Zotero.Utilities.Internal.copyTextToClipboard");
-    if ((Zotero.Utilities as any).Internal?.copyTextToClipboard) {
-      (Zotero.Utilities as any).Internal.copyTextToClipboard(text);
-      ztoolkit.log(
-        "[Copy] Zotero.Utilities.Internal.copyTextToClipboard succeeded",
-      );
-      onToast("Copied!");
-      return;
-    } else {
-      ztoolkit.log("[Copy] copyTextToClipboard not available");
-    }
-  } catch (error) {
-    ztoolkit.log(
-      "[Copy] Zotero.Utilities.Internal.copyTextToClipboard failed:",
-      error,
-    );
-  }
-
-  // 方法2: nsIClipboardHelper
+  // 方法1: nsIClipboardHelper (XPCOM)
   try {
     ztoolkit.log("[Copy] Trying nsIClipboardHelper");
     const clipboardService = (Components.classes as any)[
       "@mozilla.org/widget/clipboardhelper;1"
     ]?.getService((Components.interfaces as any).nsIClipboardHelper);
-    ztoolkit.log("[Copy] clipboardService:", clipboardService);
-
     if (clipboardService) {
       clipboardService.copyString(text);
       ztoolkit.log("[Copy] nsIClipboardHelper succeeded");
       onToast("Copied!");
       return;
-    } else {
-      ztoolkit.log("[Copy] nsIClipboardHelper not available");
     }
   } catch (error) {
     ztoolkit.log("[Copy] nsIClipboardHelper failed:", error);
   }
 
-  // 方法3: document.execCommand (旧方法但可能有效)
+  // 方法2: document.execCommand (旧方法但可能有效)
   try {
     ztoolkit.log("[Copy] Trying document.execCommand");
     if (doc.body) {
