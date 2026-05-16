@@ -16,11 +16,8 @@ export class ZoteroAPI {
   static async getPaperContent(itemID: number): Promise<string | null> {
     try {
       const item = Zotero.Items.get(itemID);
-      if (!item) {
-        return null;
-      }
+      if (!item) return null;
 
-      // 获取 PDF 附件
       const attachmentIDs = item.getAttachments();
       ztoolkit.log("[ZoteroAPI] Attachment IDs:", attachmentIDs);
 
@@ -31,56 +28,36 @@ export class ZoteroAPI {
         const contentType = attachment.attachmentContentType;
         ztoolkit.log("[ZoteroAPI] Attachment contentType:", contentType);
 
-        if (contentType === "application/pdf") {
-          // 方法1: 尝试从全文索引获取
-          try {
-            ztoolkit.log("[ZoteroAPI] Trying Zotero.Fulltext.getItemContent");
-            const content = await (Zotero.Fulltext as any).getItemContent(
-              attachmentID,
-            );
+        if (contentType !== "application/pdf") continue;
+
+        // 方法1: 从全文索引缓存文件读取
+        try {
+          ztoolkit.log("[ZoteroAPI] Trying cache file");
+          const cacheFile = Zotero.Fulltext.getItemCacheFile(attachment);
+          ztoolkit.log("[ZoteroAPI] Cache file:", cacheFile?.path);
+          if (cacheFile && (await cacheFile.exists())) {
+            const text = await Zotero.File.getContentsAsync(cacheFile);
             ztoolkit.log(
-              "[ZoteroAPI] getItemContent result:",
-              content ? "got content" : "no content",
+              "[ZoteroAPI] Cache file content length:",
+              typeof text === "string" ? text.length : "N/A",
             );
-            if (content && content.content) {
-              return content.content;
-            }
-          } catch (e) {
-            ztoolkit.log("[ZoteroAPI] getItemContent failed:", e);
+            if (text) return text as string;
           }
+        } catch (e) {
+          ztoolkit.log("[ZoteroAPI] Cache file failed:", e);
+        }
 
-          // 方法2: 尝试从缓存文件读取
-          try {
-            ztoolkit.log("[ZoteroAPI] Trying cache file");
-            const cacheFile = Zotero.Fulltext.getItemCacheFile(attachment);
-            ztoolkit.log("[ZoteroAPI] Cache file:", cacheFile?.path);
-            if (cacheFile && (await cacheFile.exists())) {
-              const text = await Zotero.File.getContentsAsync(cacheFile);
-              ztoolkit.log(
-                "[ZoteroAPI] Cache file content length:",
-                typeof text === "string" ? text.length : "N/A",
-              );
-              if (text) {
-                return text as string;
-              }
-            }
-          } catch (e) {
-            ztoolkit.log("[ZoteroAPI] Cache file failed:", e);
+        // 方法2: 触发索引后再读缓存文件
+        try {
+          ztoolkit.log("[ZoteroAPI] Trying to index and read cache");
+          await Zotero.Fulltext.indexItems([attachmentID]);
+          const cacheFile = Zotero.Fulltext.getItemCacheFile(attachment);
+          if (cacheFile && (await cacheFile.exists())) {
+            const text = await Zotero.File.getContentsAsync(cacheFile);
+            if (text) return text as string;
           }
-
-          // 方法3: 尝试触发索引并获取
-          try {
-            ztoolkit.log("[ZoteroAPI] Trying to index and get content");
-            await Zotero.Fulltext.indexItems([attachmentID]);
-            const content = await (Zotero.Fulltext as any).getItemContent(
-              attachmentID,
-            );
-            if (content && content.content) {
-              return content.content;
-            }
-          } catch (e) {
-            ztoolkit.log("[ZoteroAPI] Index and get failed:", e);
-          }
+        } catch (e) {
+          ztoolkit.log("[ZoteroAPI] Index and read cache failed:", e);
         }
       }
 
